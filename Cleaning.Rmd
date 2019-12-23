@@ -1,0 +1,44 @@
+---
+title: "Cleaning"
+author: "Jiaxi Li"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+In this file, I first load all the data. After transforming simple returns into log returns, I remove the irrelevant variables and save all the data into a data file in the data folder.
+
+# Load Data
+
+```{r}
+# load useful packages
+library(tidyverse)
+library(here)
+library(dplyr)
+
+# load the data
+Regular <- read_csv(here("data/Regular.csv"))
+REIT <- readxl::read_xlsx(here("data/REIT.xlsx"))
+Factors <- read_csv(here("data/FF5.csv"))
+
+# change the first variable name in Factors and second variable in  as "date"
+names(Factors)[1:2] = c("date", "Mkt_RF")
+names(REIT)[2] = "date"
+
+Regular
+REIT
+Factors
+```
+
+
+# Clean Regular
+
+
+
+```{r}
+```
+
