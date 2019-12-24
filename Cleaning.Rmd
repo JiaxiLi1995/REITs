@@ -52,10 +52,12 @@ The selected "Regular" Stocks are the ones with share code 10 and 11.
 ```{r}
 # Generate lagged capitalization for potential rebalancing and change date into yyyymm. Keep exchange code and share code. Note: RET is simple return.
 Regular1 <- Regular %>%
+  group_by(PERMNO) %>%
   mutate(date = floor(date/100),
          cap = abs(PRC) * SHROUT,
          lagcap = lag(cap, n = 1)) %>%
-  subset(select = -c(5,6,7,9,10))
+  ungroup() %>%
+  subset(select = -c(5,7,8))
 ```
 
 # Clean REIT Stocks
@@ -65,16 +67,41 @@ The selected "REIT" Stocks are the ones with share code 18.
 ```{r}
 # Generate lagged capitalization for potential rebalancing and change date into yyyymm. Keep exchange code and share code. Note: RET is simple return.
 REIT1 <- REIT %>%
+  group_by(PERMNO) %>%
   # change date format
   mutate(date = gsub("[^[:digit:]]", "", date),
          date = floor(as.numeric(date)/100),
          lagcap = lag(cap, n = 1)) %>%
+  ungroup() %>%
   subset(select = names(Regular1))
 ```
 
 
 # Join all three dataset together
 
+Join all data, remove non-existing returns
+
 ```{r}
+# bind Regular1 and REIT1, then join Factors
+All <- bind_rows(Regular1, REIT1) %>%
+  inner_join(Factors) %>%
+  # create risk premium RP (simple) and rp (log), and all log factors premium
+  mutate(RP = RET - RF,
+         rp = log(1 + RP),
+         mkt_rf = log(1 + Mkt_RF),
+         smb = log(1 + SMB),
+         hml = log(1 + HML),
+         rmw = log(1 + RMW),
+         cma = log(1 + CMA),
+         isREIT = (SHRCD == 18)) %>%
+  # remove share code and exchange code
+  subset(select = -c(3,4)) %>%
+  filter(!is.na(rp))
+```
+
+# Save all the data
+```{r}
+# Save file as a csv
+ write_csv(All, here("data","All.csv"))
 ```
 
