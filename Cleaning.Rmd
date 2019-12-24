@@ -62,7 +62,6 @@ The selected "REIT" Stocks are the ones with share code 18.
 
 ```{r}
 # Generate lagged capitalization for potential rebalancing and change date into yyyymm. Keep exchange code and share code. Note: RET is simple return.
-REIT1
 REIT1 <- REIT %>%
   # change date format
   mutate(date = gsub("[^[:digit:]]", "", date),
