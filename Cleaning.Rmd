@@ -39,7 +39,9 @@ REIT <- readxl::read_xlsx(here("data/REIT.xlsx")) %>%
 Factors <- read_csv(here("data/FF5.csv")) %>%
   # rename the date and Mkt_RF
   rename(date = "X1",
-         Mkt_RF = "Mkt-RF")
+         Mkt_RF = "Mkt-RF") %>%
+  # change all returns into decimals
+  mutate_at(vars(-date), function(x, na.rm = FALSE) (x/100))
 ```
 
 
@@ -70,4 +72,9 @@ REIT1 <- REIT %>%
   subset(select = names(Regular1))
 ```
 
+
+# Join all three dataset together
+
+```{r}
+```
 
