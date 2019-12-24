@@ -1,0 +1,53 @@
+---
+title: "Betas"
+author: "Jiaxi Li"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+# Load Clean Data
+
+Load All.csv and select the applicable variables: log premiums, PERMNO, and isREIT
+
+```{r}
+# load useful packages
+library(tidyverse)
+library(here)
+library(dplyr)
+
+# load data to include only log premiums, PERMNO, and isREIT
+Reg <- read_csv(here("data/All.csv"))  %>%
+  subset(select = c(1, 12:18))
+```
+
+# Beta Calculations
+
+I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
+
+```{r}
+# group PERMNO and isREIT and then do the regression
+Reg1 <- Reg %>%
+  group_by(PERMNO, isREIT)
+
+temp <- Reg1 %>%
+  summarise(betas = list(lm(rp ~ .- PERMNO - isREIT, data = Reg1) %>%
+                           coefficients()))
+
+# extract the betas
+Betas <- do.call(rbind.data.frame, temp$betas) %>%
+              as_tibble()
+
+# rename the beta variables
+names(Betas) = names(temp$betas[[1]])
+
+# join the identifiers and betas
+Betas1 <- cbind(temp[, c(1,2)], Betas) %>%
+  as_tibble()
+
+```
+
