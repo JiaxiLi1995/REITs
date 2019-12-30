@@ -88,3 +88,31 @@ Betas1 <- cbind(temp[, c(1,2)], Betas) %>%
 
 According to https://nelsonareal.net/blog/2017/06/speeding_up_ols.html, I will use speedlm to do the regression since it is the fastest with formula. It is from the "speedglm" package. Since group_by took too long to run, I have a for loop instead.
 
+```{r}
+# load speedglm for fast regression
+library(speedglm)
+
+# extract all the stocks with more than 36 data points
+Returns_36 <- Returns %>%
+  subset(n>35)
+
+# group PERMNO and isREIT and then do the regression
+# presave the result
+Betas <- Reg2 %>%
+  group_by(PERMNO, isREIT) %>%
+  summarise() %>%
+  mutate(b_m = 0,
+         b_smb = 0,
+         b_hml = 0,
+         b_rmw = 0,
+         b_cma = 0)
+
+# use the for-loop to calculate the betas without intercept
+for (i in 1:nrow(Returns_36)) {
+  Betas[i, 3:7] <- (speedlm(rp ~ .- PERMNO - isREIT -1, data = Reg1 %>%
+                                  subset(PERMNO == Returns_36$PERMNO[i])) %>%
+                      coefficients())
+}
+
+```
+
