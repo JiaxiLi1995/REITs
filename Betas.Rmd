@@ -27,6 +27,41 @@ Reg <- read_csv(here("data/All.csv"))  %>%
 
 # Beta Calculations
 
+First, I would only choose the ones with more than 3 years worth of data (at least 36 data points) and also calculate the average risk premium for them.
+
+```{r}
+# Remove the empty rp's
+Reg1 <- Reg %>%
+  subset(!is.na(rp))
+
+# there seems to be no empty rp so proceed with Reg
+Returns <- Reg %>%
+  group_by(PERMNO, isREIT) %>%
+  summarise(n = n(),
+            avg_rp = mean(rp))
+
+# select the ones with more than 35 data points
+Reg2 <- Reg %>%
+  full_join(Returns %>%
+              subset(select = - 4)) %>%
+  subset(n>35) %>%
+  subset(select = - 9)
+
+# summarize the data points
+Reg2 %>%
+  group_by(isREIT) %>%
+  summarise(n = n())
+
+Reg2 %>%
+  group_by(isREIT, PERMNO) %>%
+  summarise() %>%
+  ungroup() %>%
+  group_by(isREIT) %>%
+  summarise(n = n())
+```
+
+There are 1,496,878 usable non-REITs day&returns and 49,055 usable REITs day&returns. They are from 11,503 non-REITs stocks and 361 REITs stocks.
+
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
 ```{r}
