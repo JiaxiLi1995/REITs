@@ -76,7 +76,6 @@ REIT1 <- REIT %>%
   subset(select = names(Regular1))
 ```
 
-
 # Join all three dataset together
 
 Join all data, remove non-existing returns
@@ -99,9 +98,64 @@ All <- bind_rows(Regular1, REIT1) %>%
   filter(!is.na(rp))
 ```
 
+# Verify the non-REITs
+
+There are some equities are labeled both REITs and non-REITs. After investigating a few of them, it seems that CRSP first label the REITs as common stocks when it is just listed and then change it as REITs later. I would correct them here.
+
+```{r}
+# group PERMNO and isREIT and check those PERMNOs classified as both
+All_1 <- All %>%
+  group_by(PERMNO, isREIT) %>%
+  summarise()
+
+# check whether the PERMNOs are unique here (there are ones that is labeled both REITs and non-REITs)
+Problems <- All_1 %>%
+  ungroup() %>%
+  group_by(PERMNO) %>%
+  summarise(n = n()) %>%
+  filter(n > 1) %>%
+  inner_join(All_1)
+
+# It seems one with both labels are all REITs (I will trust the REITs data), and change all them to REITs
+All <- All %>%
+  mutate(isREIT = (isREIT|(PERMNO %in% Problems$PERMNO)))
+
+# Remove duplicate ones
+All <- All %>%
+  unique()
+
+# check whether there are only one PERMNOs (return) each day. For those with a problem, I would trust the CRSP data. I checked the CRSP data, and it seems the first ones are accurate.
+
+All_2 <- All %>%
+  group_by(PERMNO, date) %>%
+  summarise()
+
+Day_problem <- All %>%
+  group_by(PERMNO, date) %>%
+  summarise(n = n()) %>%
+  filter(n > 1) %>%
+  inner_join(All)
+
+# Remove the repeating ones that are inaccurate (even ones in Day_problem)
+Day_problem1 <- Day_problem[ seq(2,nrow(Day_problem), by = 2),]
+  
+All_3 <- Day_problem1 %>%
+  full_join(All)
+All_3 <- All_3[is.na(All_3$n),] %>%
+  subset(select = -3)
+
+All_3 %>%
+  group_by(isREIT) %>%
+  summarise(n = n())
+```
+
+Finally, we have matched 1,625,850 day&returns. There are 50,885 day&returns for REITs and 1,574,965 day&returns for non-REITs.
+
 # Save all the data
 ```{r}
 # Save file as a csv
- write_csv(All, here("data","All.csv"))
+ write_csv(All_3, here("data","All.csv"))
+ write_csv(Problems, here("data","Problems.csv"))
+ write_csv(Day_problem, here("data","Day_problem.csv"))
 ```
 
