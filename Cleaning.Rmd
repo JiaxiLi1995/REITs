@@ -137,8 +137,9 @@ Day_problem <- All %>%
   inner_join(All)
 
 # Remove the repeating ones that are inaccurate (even ones in Day_problem)
-Day_problem1 <- Day_problem[ seq(2,nrow(Day_problem), by = 2),]
-  
+Day_problem1 <- Day_problem1 <- Day_problem %>%
+  subset(seq(2,nrow(Day_problem), by = 2))
+
 All_3 <- Day_problem1 %>%
   full_join(All)
 All_3 <- All_3[is.na(All_3$n),] %>%
