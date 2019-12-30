@@ -64,9 +64,10 @@ There are 1,496,878 usable non-REITs day&returns and 49,055 usable REITs day&ret
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
-```{r}
+```{r, eval= FALSE}
+# This part should theoretically run, but it was taking too much time (maybe a better computer can do it).
 # group PERMNO and isREIT and then do the regression
-Reg1 <- Reg %>%
+Reg1 <- Reg2 %>%
   group_by(PERMNO, isREIT)
 
 temp <- Reg1 %>%
@@ -83,6 +84,7 @@ names(Betas) = names(temp$betas[[1]])
 # join the identifiers and betas
 Betas1 <- cbind(temp[, c(1,2)], Betas) %>%
   as_tibble()
-
 ```
+
+According to https://nelsonareal.net/blog/2017/06/speeding_up_ols.html, I will use speedlm to do the regression since it is the fastest with formula. It is from the "speedglm" package. Since group_by took too long to run, I have a for loop instead.
 
