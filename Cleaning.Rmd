@@ -154,7 +154,7 @@ All_3 %>%
 Finally, we have matched 1,625,850 day&returns. There are 50,885 day&returns for REITs and 1,574,965 day&returns for non-REITs.
 
 # Save all the data
-```{r}
+```{r, eval = FALSE}
 # Save file as a csv
  write_csv(All_3, here("data","All.csv"))
  write_csv(Problems, here("data","Problems.csv"))
