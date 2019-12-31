@@ -19,17 +19,21 @@ Load All.csv and select the applicable variables: log premiums, PERMNO, and isRE
 library(tidyverse)
 library(here)
 library(dplyr)
+```
 
+```{r, cache = TRUE}
 # load data to include only log premiums, PERMNO, and isREIT
 Reg <- read_csv(here("data/All.csv"))  %>%
   subset(select = c(1, 12:18))
 ```
 
-# Beta Calculations
+# Beta Calculations with at least 3 years data
 
 First, I would only choose the ones with more than 3 years worth of data (at least 36 data points) and also calculate the average risk premium for them.
 
-```{r, cache = TRUE}
+```{r}
+# 3 years (36 months)
+k = 36
 # Remove the empty rp's
 Reg1 <- Reg %>%
   subset(!is.na(rp))
@@ -40,24 +44,44 @@ Returns <- Reg %>%
   summarise(n = n(),
             avg_rp = mean(rp))
 
-# select the ones with more than 35 data points
-Reg2 <- Reg %>%
-  full_join(Returns %>%
+# change isREIT to factor names
+Reg$isREIT <- factor(Reg$isREIT, labels = c("non-REITs","REITs"))
+Returns$isREIT <- factor(Returns$isREIT, labels = c("non-REITs","REITs"))
+
+Simple_Beta1 <- function(Returns, Reg, k) {
+  # This function simply extract the regression data with >= k data points
+  # The primary inputs are:
+  # 1. Returns: tibbles with "PERMNO", "isREIT", "n", "avg_rp".
+  # 2. Reg: tibbles with "PERMNO", "rp", factors, and "isREIT"
+  # 3. k: number of months we at least need for estimation
+  
+  # select the ones with more than l = k-1 data points
+  l = k-1
+  
+  # select the data
+  Reg2 <- Reg %>%
+    full_join(Returns %>%
               subset(select = - 4)) %>%
-  subset(n>35) %>%
-  subset(select = - 9)
+    subset(n>l) %>%
+    subset(select = - (ncol(Reg)+1))
+    
+  return(Reg2)
+}
+
+# Apply the function to extract data
+Reg2 <- Simple_Beta1(Returns, Reg, k)
 
 # summarize the data points
 Reg2 %>%
   group_by(isREIT) %>%
-  summarise(n = n())
-
+  summarise(days_stocks = n())
+  
 Reg2 %>%
   group_by(isREIT, PERMNO) %>%
   summarise() %>%
   ungroup() %>%
   group_by(isREIT) %>%
-  summarise(n = n())
+  summarise(stocks = n())
 ```
 
 There are 1,496,878 usable non-REITs day&returns and 49,055 usable REITs day&returns. They are from 11,503 non-REITs stocks and 361 REITs stocks.
@@ -66,7 +90,7 @@ I will apply all the available data for each asset to calculate the asset beta h
 
 ```{r, eval= FALSE}
 # This part should theoretically run, but it was taking too much time (maybe a better computer can do it).
-# group PERMNO and isREIT and then do the regression
+# group PERMNO and isREIT and then do the regression (Reg2 is the result of previous function)
 Reg1 <- Reg2 %>%
   group_by(PERMNO, isREIT)
 
@@ -89,60 +113,65 @@ Betas1 <- cbind(temp[, c(1,2)], Betas) %>%
 According to https://nelsonareal.net/blog/2017/06/speeding_up_ols.html, I will use speedlm to do the regression since it is the fastest with formula. It is from the "speedglm" package. Since group_by took too long to run, I have a for loop instead.
 
 ```{r, cache = TRUE}
-# load speedglm for fast regression
-library(speedglm)
+Simple_Beta2 <- function(Returns,Reg2,k){
+  # This function evaluate the betas with the factors
+  # The primary inputs are:
+  # 1. Returns: tibbles with "PERMNO", "isREIT", "n", "avg_rp".
+  # 2. Reg2: tibbles result from Simple_Beta1, with "PERMNO", "rp", factors, and "isREIT"
+  # 3. k: number of months we at least need for estimation
+  
+  # select the ones with more than l = k-1 data points
+  l = k-1
 
-# extract all the stocks with more than 36 data points
-Returns_36 <- Returns %>%
-  subset(n>35)
+  # extract all the stocks with more than l data points
+  Returns1<- Returns %>%
+  subset(n>l)
 
-# group PERMNO and isREIT and then do the regression
-# presave the result
-Betas <- Reg2 %>%
-  group_by(PERMNO, isREIT) %>%
-  summarise() %>%
-  mutate(b_m = 0,
-         b_smb = 0,
-         b_hml = 0,
-         b_rmw = 0,
-         b_cma = 0)
-
-# use the for-loop to calculate the betas without intercept
-for (i in 1:nrow(Returns_36)) {
-  Betas[i, 3:7] <- (speedlm(rp ~ .- PERMNO - isREIT -1, data = Reg1 %>%
-                                  subset(PERMNO == Returns_36$PERMNO[i])) %>%
-                      coefficients())
+  # group PERMNO and isREIT and then do the regression
+  # presave the result
+  Betas <- Reg2 %>%
+    subset(select = -2) %>%
+    group_by(PERMNO, isREIT) %>%
+    summarise_all(funs(mean)) %>%
+    rename_all(funs(toupper)) %>%
+    rename(isREIT = ISREIT)
+  # use the for-loop to calculate the betas without intercept
+  for (i in 1:nrow(Returns1)) {
+    Betas[i, 3:7] <- (speedglm::speedlm(rp ~ .- PERMNO - isREIT -1, data = Reg1 %>%
+                                    subset(PERMNO == Returns1$PERMNO[i])) %>%
+                        coefficients())
+  }
+  return(Betas)
 }
 
+# Find the Betas with function
+Betas_36 <- Simple_Beta2(Returns,Reg2,k)
 ```
 
 Save all the beta result in the csv file.
 ```{r, eval = FALSE}
- write_csv(Betas, here("data","Betas.csv"))
+write_csv(Betas_36, here("data","Betas_36.csv"))
 ```
 
-Since the second step should be a multi-linear regression, graph each beta against return may not result in a straight line. Instead, the distribution is presented here.
+Since the second step should be a multi-linear regression, graph each beta against return may not result in a straight line. Instead, the distribution is presented here:
 ```{r}
-# change isREIT to factor names
-Betas1 <- Betas
-Betas1$isREIT <- factor(Betas1$isREIT, labels = c("non-REITs","REITs"))
+# assign Betas
+Betas <- Betas_36
 
-# fix Betas1 for the plot 
-Betas1 <- Betas1 %>%
-  gather(types, betas, -c("PERMNO", "isREIT")) %>%
-  mutate(types = toupper(types %>%
-                           str_replace('b_', "")))
+# fix Betas1 for the plot
+Betas <- Betas %>%
+  gather(types, betas, -c("PERMNO", "isREIT"))
 
 # fix the order of factors
-Betas1$types <- factor(Betas1$types, levels = c("M","SMB","HML","RMW","CMA"))
+Betas$types <- factor(Betas$types, levels = c("MKT_RF","SMB","HML","RMW","CMA"))
 
 # plot the betas
-Betas1 %>%
+Betas %>%
   group_by(isREIT, types, betas) %>%
   ggplot(aes(types, betas)) +
   geom_violin() +
   geom_boxplot() +
-  labs(title= "Estimated Betas for the Fama French 5 Factor Model",
+  labs(title= paste("Estimated Betas for the Fama French 5 Factor Model with k=", toString(k),""),
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "Factors", y = "Beta") + 
   facet_wrap(~ isREIT)+
@@ -152,7 +181,7 @@ Betas1 %>%
 With the distribution plot presented above, I also include the quartiles in the table below.
 ```{r}
 # find the quantiles as well as the mean for each beta
-Beta_stats <- Betas1 %>%
+Beta_stats <- Betas %>%
   group_by(isREIT, types) %>%
   summarise(mean = mean(betas),
             variance = var(betas),
@@ -172,9 +201,192 @@ Beta_stats <- Beta_stats %>%
 
 # present the table
 Beta_stats %>%
-    knitr::kable(format = 'html',
-        caption = 'Statistics of Betas of the Fama French 5 Factor Model')
+  knitr::kable(format = 'html',
+        caption = paste("Statistics of Betas of the Fama French 5 Factor Model with k=", toString(k),""))
+```
 
+It seems that the distribution for REITs betas and non-REITs betas are similar.
+
+# Beta Calculations with at least 4 years data
+
+Second, I would only choose the ones with more than 4 years worth of data (at least 48 data points) and also analysis the same way as before.
+
+```{r}
+# 4 years is 48 months
+k = 48
+
+# Apply the function to extract data
+Reg2 <- Simple_Beta1(Returns, Reg, k)
+
+# summarize the data points
+Reg2 %>%
+  group_by(isREIT) %>%
+  summarise(days_stocks = n())
+  
+Reg2 %>%
+  group_by(isREIT, PERMNO) %>%
+  summarise() %>%
+  ungroup() %>%
+  group_by(isREIT) %>%
+  summarise(stocks = n())
+```
+
+There are 1,438,238 usable non-REITs day&returns and 47,098 usable REITs day&returns. They are from 10,085 non-REITs stocks and 314 REITs stocks.
+
+I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
+
+```{r, cache = TRUE}
+# Find the Betas with function
+Betas_48 <- Simple_Beta2(Returns,Reg2,k)
+```
+
+Save all the beta result in the csv file.
+```{r, eval = FALSE}
+write_csv(Betas_48, here("data","Betas_48.csv"))
+```
+
+The distribution, again, is presented here:
+```{r}
+# assign Betas
+Betas <- Betas_48
+
+# fix Betas1 for the plot
+Betas <- Betas %>%
+  gather(types, betas, -c("PERMNO", "isREIT"))
+
+# fix the order of factors
+Betas$types <- factor(Betas$types, levels = c("MKT_RF","SMB","HML","RMW","CMA"))
+
+# plot the betas
+Betas %>%
+  group_by(isREIT, types, betas) %>%
+  ggplot(aes(types, betas)) +
+  geom_violin() +
+  geom_boxplot() +
+  labs(title= paste("Estimated Betas for the Fama French 5 Factor Model with k=", toString(k),""),
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "Factors", y = "Beta") + 
+  facet_wrap(~ isREIT)+
+  theme(plot.title = element_text(hjust=0.5))
+```
+
+With the distribution plot presented above, I also include the quartiles in the table below.
+```{r}
+# find the quantiles as well as the mean for each beta
+Beta_stats <- Betas %>%
+  group_by(isREIT, types) %>%
+  summarise(mean = mean(betas),
+            variance = var(betas),
+            kurtosis = moments::kurtosis(betas),
+            min = min(betas),
+            Q1 = quantile(betas, probs = 0.25),
+            median = median(betas),
+            Q3 = quantile(betas, probs = 0.75),
+            max = max(betas)) %>%
+  gather(stat,  values, -c("isREIT","types")) %>%
+  spread(types, values)
+
+# fix the order of the table
+Beta_stats <- Beta_stats %>%
+  arrange(match(stat, c("mean","variance","kurtosis","min","Q1","median","Q3","max"))) %>%
+  arrange_at(1)
+
+# present the table
+Beta_stats %>%
+  knitr::kable(format = 'html',
+        caption = paste("Statistics of Betas of the Fama French 5 Factor Model with k=", toString(k),""))
+```
+
+It seems that the distribution for REITs betas and non-REITs betas are similar.
+
+# Beta Calculations with at least 5 years data
+
+Second, I would only choose the ones with more than 5 years worth of data (at least 60 data points) and also analysis the same way as before.
+
+```{r}
+# 5 years is 60 months
+k = 60
+
+# Apply the function to extract data
+Reg2 <- Simple_Beta1(Returns, Reg, k)
+
+# summarize the data points
+Reg2 %>%
+  group_by(isREIT) %>%
+  summarise(days_stocks = n())
+  
+Reg2 %>%
+  group_by(isREIT, PERMNO) %>%
+  summarise() %>%
+  ungroup() %>%
+  group_by(isREIT) %>%
+  summarise(stocks = n())
+```
+
+There are 1,364,749 usable non-REITs day&returns and 44,560 usable REITs day&returns. They are from 8,714 non-REITs stocks and 266 REITs stocks.
+
+I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
+
+```{r, cache = TRUE}
+# Find the Betas with function
+Betas_60 <- Simple_Beta2(Returns,Reg2,k)
+```
+
+Save all the beta result in the csv file.
+```{r, eval = FALSE}
+write_csv(Betas_60, here("data","Betas_60.csv"))
+```
+
+The distribution, again, is presented here:
+```{r}
+# assign Betas
+Betas <- Betas_60
+
+# fix Betas1 for the plot
+Betas <- Betas %>%
+  gather(types, betas, -c("PERMNO", "isREIT"))
+
+# fix the order of factors
+Betas$types <- factor(Betas$types, levels = c("MKT_RF","SMB","HML","RMW","CMA"))
+
+# plot the betas
+Betas %>%
+  group_by(isREIT, types, betas) %>%
+  ggplot(aes(types, betas)) +
+  geom_violin() +
+  geom_boxplot() +
+  labs(title= paste("Estimated Betas for the Fama French 5 Factor Model with k=", toString(k),""),
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "Factors", y = "Beta") + 
+  facet_wrap(~ isREIT)+
+  theme(plot.title = element_text(hjust=0.5))
+```
+
+With the distribution plot presented above, I also include the quartiles in the table below.
+```{r}
+# find the quantiles as well as the mean for each beta
+Beta_stats <- Betas %>%
+  group_by(isREIT, types) %>%
+  summarise(mean = mean(betas),
+            variance = var(betas),
+            kurtosis = moments::kurtosis(betas),
+            min = min(betas),
+            Q1 = quantile(betas, probs = 0.25),
+            median = median(betas),
+            Q3 = quantile(betas, probs = 0.75),
+            max = max(betas)) %>%
+  gather(stat,  values, -c("isREIT","types")) %>%
+  spread(types, values)
+
+# fix the order of the table
+Beta_stats <- Beta_stats %>%
+  arrange(match(stat, c("mean","variance","kurtosis","min","Q1","median","Q3","max"))) %>%
+  arrange_at(1)
+
+# present the table
+Beta_stats %>%
+  knitr::kable(format = 'html',
+        caption = paste("Statistics of Betas of the Fama French 5 Factor Model with k=", toString(k),""))
 ```
 
 It seems that the distribution for REITs betas and non-REITs betas are similar.
