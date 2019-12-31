@@ -5,7 +5,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(message = FALSE)
 knitr::opts_chunk$set(warning = FALSE)
 ```
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(warning = FALSE)
 
 Load All.csv and select the applicable variables: log premiums, PERMNO, and isREIT
 
-```{r, cache = TRUE}
+```{r}
 # load useful packages
 library(tidyverse)
 library(here)
@@ -124,13 +124,20 @@ Save all the beta result in the csv file.
 Since the second step should be a multi-linear regression, graph each beta against return may not result in a straight line. Instead, the distribution is presented here.
 ```{r}
 # change isREIT to factor names
-Betas$isREIT <- factor(Betas$isREIT, labels = c("non-REITs","REITs"))
+Betas1 <- Betas
+Betas1$isREIT <- factor(Betas1$isREIT, labels = c("non-REITs","REITs"))
 
-# plot the betas
-Betas %>%
+# fix Betas1 for the plot 
+Betas1 <- Betas1 %>%
   gather(types, betas, -c("PERMNO", "isREIT")) %>%
   mutate(types = toupper(types %>%
-                           str_replace('b_', ""))) %>%
+                           str_replace('b_', "")))
+
+# fix the order of factors
+Betas1$types <- factor(Betas1$types, levels = c("M","SMB","HML","RMW","CMA"))
+
+# plot the betas
+Betas1 %>%
   group_by(isREIT, types, betas) %>%
   ggplot(aes(types, betas)) +
   geom_violin() +
@@ -142,3 +149,32 @@ Betas %>%
   theme(plot.title = element_text(hjust=0.5))
 ```
 
+With the distribution plot presented above, I also include the quartiles in the table below.
+```{r}
+# find the quantiles as well as the mean for each beta
+Beta_stats <- Betas1 %>%
+  group_by(isREIT, types) %>%
+  summarise(mean = mean(betas),
+            variance = var(betas),
+            kurtosis = moments::kurtosis(betas),
+            min = min(betas),
+            Q1 = quantile(betas, probs = 0.25),
+            median = median(betas),
+            Q3 = quantile(betas, probs = 0.75),
+            max = max(betas)) %>%
+  gather(stat,  values, -c("isREIT","types")) %>%
+  spread(types, values)
+
+# fix the order of the table
+Beta_stats <- Beta_stats %>%
+  arrange(match(stat, c("mean","variance","kurtosis","min","Q1","median","Q3","max"))) %>%
+  arrange_at(1)
+
+# present the table
+Beta_stats %>%
+    knitr::kable(format = 'html',
+        caption = 'Statistics of Betas of the Fama French 5 Factor Model')
+
+```
+
+It seems that the distribution for REITs betas and non-REITs betas are similar.
