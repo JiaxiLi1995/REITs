@@ -14,7 +14,7 @@ knitr::opts_chunk$set(warning = FALSE)
 
 Load All.csv and select the applicable variables: log premiums, PERMNO, and isREIT
 
-```{r}
+```{r, cache = TRUE}
 # load useful packages
 library(tidyverse)
 library(here)
@@ -29,7 +29,7 @@ Reg <- read_csv(here("data/All.csv"))  %>%
 
 First, I would only choose the ones with more than 3 years worth of data (at least 36 data points) and also calculate the average risk premium for them.
 
-```{r}
+```{r, cache = TRUE}
 # Remove the empty rp's
 Reg1 <- Reg %>%
   subset(!is.na(rp))
@@ -88,7 +88,7 @@ Betas1 <- cbind(temp[, c(1,2)], Betas) %>%
 
 According to https://nelsonareal.net/blog/2017/06/speeding_up_ols.html, I will use speedlm to do the regression since it is the fastest with formula. It is from the "speedglm" package. Since group_by took too long to run, I have a for loop instead.
 
-```{r}
+```{r, cache = TRUE}
 # load speedglm for fast regression
 library(speedglm)
 
@@ -114,5 +114,31 @@ for (i in 1:nrow(Returns_36)) {
                       coefficients())
 }
 
+```
+
+Save all the beta result in the csv file.
+```{r, eval = FALSE}
+ write_csv(Betas, here("data","Betas.csv"))
+```
+
+Since the second step should be a multi-linear regression, graph each beta against return may not result in a straight line. Instead, the distribution is presented here.
+```{r}
+# change isREIT to factor names
+Betas$isREIT <- factor(Betas$isREIT, labels = c("non-REITs","REITs"))
+
+# plot the betas
+Betas %>%
+  gather(types, betas, -c("PERMNO", "isREIT")) %>%
+  mutate(types = toupper(types %>%
+                           str_replace('b_', ""))) %>%
+  group_by(isREIT, types, betas) %>%
+  ggplot(aes(types, betas)) +
+  geom_violin() +
+  geom_boxplot() +
+  labs(title= "Estimated Betas for the Fama French 5 Factor Model",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "Factors", y = "Beta") + 
+  facet_wrap(~ isREIT)+
+  theme(plot.title = element_text(hjust=0.5))
 ```
 
