@@ -10,4 +10,4 @@ We try to price the equity REITS using existing factors. The REIT, stock and Fac
 
 * The first file here is called Cleaning.Rmd, in which I join all the data and convert all data into log return. I will also remove irrelevant data.
 
-* The second file here is called Betas.Rmd, in which I analyze the beta distributions for REIT and non-REIT. Here is the [result](https://github.com/JiaxiLi1995/REITs/blob/master/Betas.md) of Beta Analysis.
+* The second file here is called Betas.Rmd, in which I analyze the beta distributions for REIT and non-REIT. [Here](https://github.com/JiaxiLi1995/REITs/blob/master/Betas.md) is the result of Beta Analysis.
