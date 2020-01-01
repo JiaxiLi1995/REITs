@@ -1,0 +1,49 @@
+---
+title: "Sector"
+author: "Jiaxi Li"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+In this file, I will analysis the sector level betas and compare the REITs ones against other sectors. The data here are from Ken French Data Library 49 industry portfolios since 1993.
+
+# Load Data
+
+Load FF5.csv and 49_Industry_Portfolios.csv
+
+```{r}
+# load useful packages
+library(tidyverse)
+library(here)
+library(dplyr)
+```
+
+```{r, cache = TRUE}
+# load data to include only log premiums, PERMNO, and isREIT
+Portfolios <- read_csv(here("data/49_Industry_Portfolios.csv"))
+FF5 <- read_csv(here("data/FF5.csv"))
+```
+
+# Merge Data, Clean Data, and Regression
+
+I will merge the data and convert the simple return to log return.
+
+```{r}
+Convert <- function(RET){return(log(RET/100+1))}
+
+# Merge data and covert to log return
+All <- Portfolios %>%
+  gather(Industry, RET, - X1) %>%
+  inner_join(FF5) %>%
+  mutate(RP = RET - RF) %>%
+  subset(select = -X1) %>%
+  mutate_if(is.numeric,Convert)
+
+
+```
+
