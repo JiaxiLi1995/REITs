@@ -31,9 +31,9 @@ FF5 <- read_csv(here("data/FF5.csv"))
 
 # Merge Data, Clean Data, and Regression
 
-I will merge the data and convert the simple return to log return.
+I will merge the data and convert the simple return to log return. Since the graph does not work well, I made it, saved it and then loaded it.
 
-```{r}
+```{r, eval=FALSE}
 Convert <- function(RET){return(log(RET/100+1))}
 
 # Merge data and covert to log return
@@ -41,9 +41,66 @@ All <- Portfolios %>%
   gather(Industry, RET, - X1) %>%
   inner_join(FF5) %>%
   mutate(RP = RET - RF) %>%
-  subset(select = -X1) %>%
+  subset(select = -c(X1,RF,RET)) %>%
   mutate_if(is.numeric,Convert)
 
+# Group the data and do the regression
+Sectors <- All %>%
+  group_by(Industry) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       coefficients())
 
+# extract the betas
+Betas <- do.call(rbind.data.frame, Sectors$model) %>%
+              as_tibble()
+
+# rename the beta variables
+names(Betas) = mgsub::mgsub( names(Sectors$model[[1]]), c("\\(","`","\\)"), c("","",""))
+
+# join the identifiers and betas and gather coefficient
+Betas1 <- cbind(Sectors[, 1], Betas) %>%
+  as_tibble() %>%
+  gather(types, coefficient, -Industry)
+
+# fix the order of factors
+Betas1$types <- factor(Betas1$types, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
+
+# plot the histograms
+# These two functions would reorder the bars and fix the names. They are from https://github.com/dgrtwo/drlib/blob/master/R/reorder_within.R.
+reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
+  new_x <- paste(x, within, sep = sep)
+  stats::reorder(new_x, by, FUN = fun)
+}
+
+scale_x_reordered <- function(..., sep = "___") {
+  reg <- paste0(sep, ".+$")
+  ggplot2::scale_x_discrete(labels = function(x) gsub(reg, "", x), ...)
+}
+  
+Betas1 %>%
+  ggplot(aes(reorder_within(Industry, coefficient, types),
+             coefficient,
+             fill = factor(
+               ifelse(
+                 Industry == "RlEst",
+                 "Highlighted",
+                 "Normal")))) +
+  geom_bar(stat = "identity",
+           show.legend = FALSE) +
+  scale_fill_manual(name = "area",
+                    values=c("red","grey50")) +
+  labs(title= paste("Estimated Betas for 49 Industries"),
+       caption = "Source: Ken French Data Library",
+       x = "Industries", y = "coefficients") +
+  scale_x_reordered() +
+  facet_wrap(~ types,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("Sectors.png", width = 3*2.5, height = 3*6, limitsize = FALSE)
 ```
+
+![Here is the coefficient for different sectors](Sectors.png)
 
