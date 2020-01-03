@@ -50,17 +50,51 @@ Sectors <- All %>%
   do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
        coefficients())
 
+# lower bound for the confidence interval
+Sectorsl <- All %>%
+  group_by(Industry) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       confint() %>%
+       subset(select = "2.5 %") %>%
+       t())
+
+# upper bound for the confidence interval
+Sectorsu <- All %>%
+  group_by(Industry) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       confint() %>%
+       subset(select = "97.5 %") %>%
+       t())
+
 # extract the betas
 Betas <- do.call(rbind.data.frame, Sectors$model) %>%
               as_tibble()
 
+Betasl <- do.call(rbind.data.frame, Sectorsl$model) %>%
+              as_tibble()
+
+Betasu <- do.call(rbind.data.frame, Sectorsu$model) %>%
+              as_tibble()
+
 # rename the beta variables
 names(Betas) = mgsub::mgsub( names(Sectors$model[[1]]), c("\\(","`","\\)"), c("","",""))
+names(Betasl) = names(Betas)
+names(Betasu) = names(Betas)
 
 # join the identifiers and betas and gather coefficient
-Betas1 <- cbind(Sectors[, 1], Betas) %>%
+Betas1 <- (cbind(Sectors[, 1], Betas) %>%
   as_tibble() %>%
-  gather(types, coefficient, -Industry)
+  gather(types, coefficient, -Industry)) %>%
+  inner_join(
+    (cbind(Sectorsl[, 1], Betasl) %>%
+       as_tibble() %>%
+       gather(types, coefficientl, -Industry))
+  ) %>%
+  inner_join(
+    (cbind(Sectorsu[, 1], Betasu) %>%
+       as_tibble() %>%
+       gather(types, coefficientu, -Industry)))
+  
 
 # fix the order of factors
 Betas1$types <- factor(Betas1$types, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
@@ -78,15 +112,24 @@ scale_x_reordered <- function(..., sep = "___") {
 }
   
 Betas1 %>%
-  ggplot(aes(reorder_within(Industry, coefficient, types),
+  ggplot() +
+  geom_bar(aes(reorder_within(Industry, coefficient, types),
              coefficient,
              fill = factor(
                ifelse(
                  Industry == "RlEst",
                  "Highlighted",
-                 "Normal")))) +
-  geom_bar(stat = "identity",
+                 "Normal"))),
+           stat = "identity",
            show.legend = FALSE) +
+  geom_errorbar(
+    aes(x = reorder_within(Industry, coefficient, types),
+        ymin = coefficientl,
+        ymax = coefficientu),
+    width=0.4,
+    colour="orange",
+    alpha=0.9,
+    size=1.3) +
   scale_fill_manual(name = "area",
                     values=c("red","grey50")) +
   labs(title= paste("Estimated Betas for 49 Industries"),
