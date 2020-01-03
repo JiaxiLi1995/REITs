@@ -33,7 +33,7 @@ FF5 <- read_csv(here("data/FF5.csv"))
 
 I will merge the data and convert the simple return to log return. Since the graph does not work well, I made it, saved it and then loaded it.
 
-```{r, eval=FALSE}
+```{r, cache = TRUE}
 Convert <- function(RET){return(log(RET/100+1))}
 
 # Merge data and covert to log return
@@ -98,7 +98,9 @@ Betas1 <- (cbind(Sectors[, 1], Betas) %>%
 
 # fix the order of factors
 Betas1$types <- factor(Betas1$types, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
+```
 
+```{r, eval = FALSE}
 # plot the histograms
 # These two functions would reorder the bars and fix the names. They are from https://github.com/dgrtwo/drlib/blob/master/R/reorder_within.R.
 reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
@@ -132,7 +134,7 @@ Betas1 %>%
     size=1.3) +
   scale_fill_manual(name = "area",
                     values=c("red","grey50")) +
-  labs(title= paste("Estimated Betas for 49 Industries"),
+  labs(title= "Estimated Betas for 49 Industries",
        caption = "Source: Ken French Data Library",
        x = "Industries", y = "coefficients") +
   scale_x_reordered() +
@@ -146,4 +148,45 @@ ggsave("Sectors.png", width = 3*2.5, height = 3*6, limitsize = FALSE)
 ```
 
 ![Here is the coefficient for different sectors](Sectors.png)
+
+
+Here, I would present the risk premiums distribution for each sector.
+```{r}
+# density plot for the sectors
+All %>%
+  subset(select = c(Industry,RP)) %>%
+  ggplot(aes(x = RP)) +
+  geom_density() +
+  facet_wrap(~Industry) +
+  labs(title= "49 Industries Risk Premium Distributions",
+       caption = "Source: Ken French Data Library",
+       x = "Industry Risk Premium", y = "Density") +
+  theme(plot.title = element_text(hjust=0.5))
+
+# density plot for the factors
+dis_factors <- All %>%
+  subset(select = -c(RP, Industry)) %>%
+  gather(factors, returns) %>%
+  nest(returns) %>%
+  mutate(y = map(data, ~ dnorm(
+    .$returns, mean = mean(.$returns), sd = sd(.$returns)
+    ))) %>% 
+  unnest(data,y)
+
+# fix the order of factors
+dis_factors$factors <- factor(dis_factors$factors, levels = c("Mkt-RF","SMB","HML","RMW","CMA"))
+
+# plot the factor distributions
+dis_factors %>%
+  ggplot(aes(x = returns)) +
+  geom_density() +
+  geom_line(aes(y = y, color = "normal")) +
+  facet_wrap(~factors) +
+  labs(title= "Fama French 5 Factors Distributions",
+       caption = "Source: Ken French Data Library",
+       x = "Factor Risk Premium", y = "Density") +
+  theme(plot.title = element_text(hjust=0.5),
+        legend.position = c(0.8, 0.2))
+
+```
 
