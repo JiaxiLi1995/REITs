@@ -190,3 +190,62 @@ dis_factors %>%
 
 ```
 
+# Plot the time series plot for the betas
+
+Using 5 year windows for a time series beta plot 
+```{r}
+# extract the data for the rolling window
+Rolling <- All %>%
+  filter(Industry == "RlEst") %>%
+  cbind(FF5 %>%
+          subset(select = 1)) %>%
+  subset(select = -1)
+
+# preset rolling window betas
+Rolling_beta <- Rolling %>%
+  filter(X1 >= 199712) %>%
+  rename(Intercept = RP) %>%
+  subset(select = c(7,6,1:5))
+  
+# apply the for loop to calculate the 5-year rolling beta (60 data points)
+for (i in 1:(nrow(Rolling)-59)) {
+  temp <- Rolling %>%
+    filter(X1<(X1[i]+500),
+           X1 >= X1[i]) %>%
+    do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       coefficients())
+  Rolling_beta[i,2:7] <- temp$model[[1]]
+}
+
+# rolling beta plots data
+Rolling_Betas <- Rolling_beta %>%
+  gather(types, coefficient, -X1) %>%
+  mutate(X1 = paste(as.character(
+    floor(X1/100)),
+    "-",
+    as.character(
+      sprintf("%02d",
+              X1-100*floor(X1/100))),
+    "-01",
+    sep ="")) %>%
+  mutate(X1 = as.Date(X1))
+  
+# fix the order of factors
+Rolling_Betas$types <- factor(Rolling_Betas$types, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
+
+# plot the time-series betas
+Rolling_Betas %>%
+  ggplot() +
+  geom_line(aes(X1,
+             coefficient)) +
+  scale_x_date() +
+  labs(title= "Estimated 5-year Betas for REITs",
+       caption = "Source: Ken French Data Library",
+       x = "date", y = "coefficients") +
+  facet_wrap(~ types,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+```
+

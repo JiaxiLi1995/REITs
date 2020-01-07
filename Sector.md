@@ -17,3 +17,8 @@ I will merge the data and convert the simple return to log return. Since the gra
 ![Here is the coefficient for different sectors](Sectors.png)
 
 Here, I would present the risk premiums distribution for each sector. ![](Sector_files/figure-markdown_github/unnamed-chunk-5-1.png)![](Sector_files/figure-markdown_github/unnamed-chunk-5-2.png)
+
+Plot the time series plot for the betas
+=======================================
+
+Using 5 year windows for a time series beta plot ![](Sector_files/figure-markdown_github/unnamed-chunk-6-1.png)
