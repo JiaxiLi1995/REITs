@@ -27,3 +27,14 @@ Full Sample Second-Pass Fama Macbeth
 ====================================
 
 ![](Sector_files/figure-markdown_github/unnamed-chunk-7-1.png)![](Sector_files/figure-markdown_github/unnamed-chunk-7-2.png)
+
+With the Cook's Distance estimation, REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.
+
+Rolling-Window Second-Pass Fama Macbeth
+=======================================
+
+Here, I would apply the 5-year rolling window to estimate the betas and use them to calculate the lambdas for the following month.
+
+![](Sector_files/figure-markdown_github/unnamed-chunk-8-1.png)![](Sector_files/figure-markdown_github/unnamed-chunk-8-2.png)
+
+Even with Rolling Windows, the Cook's Distance estimation shows that REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.

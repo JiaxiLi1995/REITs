@@ -193,7 +193,7 @@ dis_factors %>%
 # Plot the time series plot for the betas
 
 Using 5 year windows for a time series beta plot 
-```{r}
+```{r, cache = TRUE}
 # extract the data for the rolling window
 Rolling <- All %>%
   filter(Industry == "RlEst") %>%
@@ -203,7 +203,7 @@ Rolling <- All %>%
 
 # preset rolling window betas
 Rolling_beta <- Rolling %>%
-  filter(X1 >= 199712) %>%
+  filter(X1 > 199711) %>%
   rename(Intercept = RP) %>%
   subset(select = c(7,6,1:5))
   
@@ -228,7 +228,10 @@ Rolling_Betas <- Rolling_beta %>%
               X1-100*floor(X1/100))),
     "-01",
     sep ="")) %>%
-  mutate(X1 = as.Date(X1))
+  mutate(X1 = lead(X1),
+         X1 = ifelse(is.na(X1),
+                     "2019-11-01", X1),
+         X1 = as.Date(X1))
   
 # fix the order of factors
 Rolling_Betas$types <- factor(Rolling_Betas$types, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
@@ -252,17 +255,21 @@ Rolling_Betas %>%
 # Full Sample Second-Pass Fama Macbeth
 
 ```{r, cache = TRUE}
-# Here, I will just use the previously estimated Betas1 and come up with Betas2 for the second stage regression
+# here, I will just use the previously estimated Betas1 and come up with Betas2 for the second stage regression
 All2 <- Portfolios %>%
   gather(Industry, RET, - X1) %>%
   inner_join(FF5) %>%
   mutate(RP = RET - RF) %>%
-  subset(select = c(X1, Industry, RP)) %>%
-  rename(date = X1)
+  subset(select = - c(RF, RET)) %>%
+  mutate_if(is.numeric,Convert) %>%
+  mutate(X1 = (exp(X1)-1)*100)
 
+# extract the betas I need from previous estimation
 Betas2 <- cbind(Sectors[, 1], Betas) %>%
   as_tibble() %>%
   inner_join(All2 %>%
+               subset(select = c(X1, Industry, RP)) %>%
+               rename(date = X1) %>%
                subset(date < 201911)) %>%
   subset(select = -Intercept)
 
@@ -327,7 +334,7 @@ Lambdas1 %>%
     size=1.3) +
   labs(title= "Estimated Risk Premiums for Fama French 5 Factors with 49 Industry Portfolios",
        caption = "Source: Ken French Data Library",
-       x = "Factors", y = "Risk Premiums") +
+       x = "Factors", y = "Factor Premiums") +
   theme(plot.title = element_text(hjust=0.5),
         axis.text.x = element_text(angle = 75, hjust = 1))
 
@@ -351,6 +358,10 @@ Lambdas_cook1 %>%
     colour="orange",
     alpha=0.9,
     size=1.3) +
+  geom_hline(yintercept = 4/49,
+             linetype="dashed",
+             color = "green",
+             size = 2) +
   scale_fill_manual(name = "area",
                     values=c("red","grey50")) +
   labs(title= "Cook's Distance for the Regressions",
@@ -360,3 +371,145 @@ Lambdas_cook1 %>%
         axis.text.x = element_text(angle = 75, hjust = 1))
 ```
 
+With the Cook's Distance estimation, REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.
+
+# Rolling-Window Second-Pass Fama Macbeth
+
+Here, I would apply the 5-year rolling window to estimate the betas and use them to calculate the lambdas for the following month.
+
+```{r, cache = TRUE}
+# preset rolling window betas
+Rolling_beta1 <- All2 %>%
+  filter(X1 > 199711) %>%
+  rename(Intercept = RP) %>%
+  subset(select = c(1,2,8,3:7)) %>%
+  group_by(Industry) %>%
+  mutate(X1 = lead(X1),
+         X1 = ifelse(is.na(X1),
+                     201911, X1))
+
+# calculate the betas using a for loop, I will use the "Sectors" for Industry names
+for (j in 1:49) {
+  Rolling1 <- All2 %>%
+    filter(Industry == toString(Sectors[j,1]))
+  
+  # apply the for loop to calculate the 5-year rolling beta (60 data points)
+  for (k in 1:(nrow(Rolling1)-59)) {
+    temp <- Rolling1 %>%
+      filter(X1<(X1[k]+500),
+             X1 >= X1[k]) %>%
+      do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+         coefficients())
+    Rolling_beta1[(j-1)*nrow(Rolling_beta1)/49+k,3:8] <- temp$model[[1]]
+  }
+}
+
+# set the dataset for second pass regression
+Rolling_beta2 <- Rolling_beta1 %>%
+  inner_join(All2 %>%
+               ungroup() %>%
+               subset(select = c(X1, Industry, RP))) %>%
+  subset(select = -Intercept) %>%
+  rename(date = X1) %>%
+  ungroup()
+
+# Group the data and do the second pass regression
+Rolling_Second <- Rolling_beta2 %>%
+  group_by(date) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       coefficients())
+
+# Calculate the cook's distance for each period
+Rolling_Second_cook <- Rolling_beta2 %>%
+  group_by(date) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       cooks.distance())
+
+# Unwrap the results
+Rolling_Lambdas <- do.call(rbind.data.frame, Rolling_Second$model) %>%
+              as_tibble()
+Rolling_Lambdas_cook <- do.call(rbind.data.frame, Rolling_Second_cook$model) %>%
+              as_tibble()
+
+# Rename the variables
+names(Rolling_Lambdas) = mgsub::mgsub(names(Rolling_Second$model[[1]]), c("\\(","`","\\)"), c("","",""))
+names(Rolling_Lambdas_cook) = names(Portfolios %>% subset(select = -X1))
+
+# Add in the dates
+Rolling_Lambdas <- cbind(Rolling_Second[, 1], Rolling_Lambdas) %>%
+  gather(Factors, RP, - date)
+Rolling_Lambdas_cook <- cbind(Rolling_Second_cook[, 1], Rolling_Lambdas_cook) %>%
+  gather(Industry, CD, - date)
+
+# fix the order of factors
+Rolling_Lambdas$Factors <- factor(Rolling_Lambdas$Factors, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
+
+# Create the data for the plot of the lambdas and cook's distance
+Rolling_Lambdas1 <- Rolling_Lambdas %>%
+  group_by(Factors) %>%
+  summarise(RPm = mean(RP),
+            RPl = RPm - qnorm(.975)*(sd(RP)/sqrt(262)),
+            RPu = RPm + qnorm(.975)*(sd(RP)/sqrt(262)))
+
+Rolling_Lambdas_cook1 <- Rolling_Lambdas_cook %>%
+  group_by(Industry) %>%
+  summarise(CDm = mean(CD),
+            CDl = CDm - qnorm(.975)*(sd(CD)/sqrt(262)),
+            CDu = CDm + qnorm(.975)*(sd(CD)/sqrt(262)))
+
+# Plot the Lambda estimations of the second pass regression
+Rolling_Lambdas1 %>%
+  ggplot() +
+  geom_bar(aes(Factors,
+             RPm),
+           stat = "identity",
+           show.legend = FALSE) +
+  geom_errorbar(
+    aes(x = Factors,
+        ymin = RPl,
+        ymax = RPu),
+    width=0.4,
+    colour="orange",
+    alpha=0.9,
+    size=1.3) +
+  labs(title= "Rolling Window Estimated Risk Premiums for Fama French 5 Factors with 49 Industry Portfolios",
+       caption = "Source: Ken French Data Library",
+       x = "Factors", y = "Factor Premiums") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+# Plot the Cook's distance for each sector
+Rolling_Lambdas_cook1 %>%
+  ggplot() +
+  geom_bar(aes(Industry,
+             CDm,
+             fill = factor(
+               ifelse(
+                 Industry == "RlEst",
+                 "Highlighted",
+                 "Normal"))),
+           stat = "identity",
+           show.legend = FALSE) +
+  geom_errorbar(
+    aes(x = Industry,
+        ymin = CDl,
+        ymax = CDu),
+    width=0.4,
+    colour="orange",
+    alpha=0.9,
+    size=1.3) +
+  geom_hline(yintercept = 4/49,
+             linetype="dashed",
+             color = "green",
+             size = 2) +
+  scale_fill_manual(name = "area",
+                    values=c("red","grey50")) +
+  labs(title= "Cook's Distance for the Rolling Window Regressions",
+       caption = "Source: Ken French Data Library",
+       x = "Industries", y = "Cooks' Distance") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+```
+
+Even with Rolling Windows, the Cook's Distance estimation shows that REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.
