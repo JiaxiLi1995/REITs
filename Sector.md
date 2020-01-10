@@ -22,3 +22,8 @@ Plot the time series plot for the betas
 =======================================
 
 Using 5 year windows for a time series beta plot ![](Sector_files/figure-markdown_github/unnamed-chunk-6-1.png)
+
+Full Sample Second-Pass Fama Macbeth
+====================================
+
+![](Sector_files/figure-markdown_github/unnamed-chunk-7-1.png)![](Sector_files/figure-markdown_github/unnamed-chunk-7-2.png)

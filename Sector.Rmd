@@ -249,3 +249,114 @@ Rolling_Betas %>%
 
 ```
 
+# Full Sample Second-Pass Fama Macbeth
+
+```{r, cache = TRUE}
+# Here, I will just use the previously estimated Betas1 and come up with Betas2 for the second stage regression
+All2 <- Portfolios %>%
+  gather(Industry, RET, - X1) %>%
+  inner_join(FF5) %>%
+  mutate(RP = RET - RF) %>%
+  subset(select = c(X1, Industry, RP)) %>%
+  rename(date = X1)
+
+Betas2 <- cbind(Sectors[, 1], Betas) %>%
+  as_tibble() %>%
+  inner_join(All2 %>%
+               subset(date < 201911)) %>%
+  subset(select = -Intercept)
+
+# Group the data and do the second pass regression
+Second <- Betas2 %>%
+  group_by(date) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       coefficients())
+
+# Calculate the cook's distance for each period
+Second_cook <- Betas2 %>%
+  group_by(date) %>%
+  do(model = lm(RP ~ `Mkt-RF` + SMB + HML + RMW + CMA, data = .) %>%
+       cooks.distance())
+
+# Unwrap the results
+Lambdas <- do.call(rbind.data.frame, Second$model) %>%
+              as_tibble()
+Lambdas_cook <- do.call(rbind.data.frame, Second_cook$model) %>%
+              as_tibble()
+
+# Rename the variables
+names(Lambdas) = mgsub::mgsub(names(Second$model[[1]]), c("\\(","`","\\)"), c("","",""))
+names(Lambdas_cook) = names(Portfolios %>% subset(select = -X1))
+
+# Add in the dates
+Lambdas <- cbind(Second[, 1], Lambdas) %>%
+  gather(Factors, RP, - date)
+Lambdas_cook <- cbind(Second_cook[, 1], Lambdas_cook) %>%
+  gather(Industry, CD, - date)
+
+# fix the order of factors
+Lambdas$Factors <- factor(Lambdas$Factors, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
+
+# Create the data for the plot of the lambdas and cook's distance
+Lambdas1 <- Lambdas %>%
+  group_by(Factors) %>%
+  summarise(RPm = mean(RP),
+            RPl = RPm - qnorm(.975)*(sd(RP)/sqrt(322)),
+            RPu = RPm + qnorm(.975)*(sd(RP)/sqrt(322)))
+
+Lambdas_cook1 <- Lambdas_cook %>%
+  group_by(Industry) %>%
+  summarise(CDm = mean(CD),
+            CDl = CDm - qnorm(.975)*(sd(CD)/sqrt(322)),
+            CDu = CDm + qnorm(.975)*(sd(CD)/sqrt(322)))
+
+# Plot the Lambda estimations of the second pass regression
+Lambdas1 %>%
+  ggplot() +
+  geom_bar(aes(Factors,
+             RPm),
+           stat = "identity",
+           show.legend = FALSE) +
+  geom_errorbar(
+    aes(x = Factors,
+        ymin = RPl,
+        ymax = RPu),
+    width=0.4,
+    colour="orange",
+    alpha=0.9,
+    size=1.3) +
+  labs(title= "Estimated Risk Premiums for Fama French 5 Factors with 49 Industry Portfolios",
+       caption = "Source: Ken French Data Library",
+       x = "Factors", y = "Risk Premiums") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+# Plot the Cook's distance for each sector
+Lambdas_cook1 %>%
+  ggplot() +
+  geom_bar(aes(Industry,
+             CDm,
+             fill = factor(
+               ifelse(
+                 Industry == "RlEst",
+                 "Highlighted",
+                 "Normal"))),
+           stat = "identity",
+           show.legend = FALSE) +
+  geom_errorbar(
+    aes(x = Industry,
+        ymin = CDl,
+        ymax = CDu),
+    width=0.4,
+    colour="orange",
+    alpha=0.9,
+    size=1.3) +
+  scale_fill_manual(name = "area",
+                    values=c("red","grey50")) +
+  labs(title= "Cook's Distance for the Regressions",
+       caption = "Source: Ken French Data Library",
+       x = "Industries", y = "Cooks' Distance") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+```
+
