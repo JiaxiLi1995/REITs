@@ -390,3 +390,23 @@ Beta_stats %>%
 ```
 
 It seems that the distribution for REITs betas and non-REITs betas are similar.
+
+## Number of REITs at each month
+```{r, cache = TRUE}
+# Number of REITs each time
+All <- read_csv(here("data/All.csv"))
+
+All %>%
+  subset(select = c(1, 2,18)) %>%
+  subset(isREIT == TRUE) %>%
+  group_by(date) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(date, n)) +
+  geom_line() +
+  labs(title= "Evolution of Number of REITs",
+       caption = "Source: Ken French Data Library and Ziman",
+       x = "Date", y = "Number of REITs") + 
+  theme(plot.title = element_text(hjust=0.5))
+```
+
+One way to tackle the unbalanced panel problem is to pick the stocks to form a balanced panel. However, this would result in a survivorship bias. I will check the IV-GMM method for alternative solution. 

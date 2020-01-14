@@ -1292,3 +1292,10 @@ max
 </tbody>
 </table>
 It seems that the distribution for REITs betas and non-REITs betas are similar.
+
+Number of REITs at each month
+-----------------------------
+
+![](Betas_files/figure-markdown_github/unnamed-chunk-19-1.png)
+
+One way to tackle the unbalanced panel problem is to pick the stocks to form a balanced panel. However, this would result in a survivorship bias. I will check the IV-GMM method for alternative solution.
