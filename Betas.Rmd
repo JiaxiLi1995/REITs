@@ -23,8 +23,15 @@ library(dplyr)
 
 ```{r, cache = TRUE}
 # load data to include only log premiums, PERMNO, and isREIT
-Reg <- read_csv(here("data/All.csv"))  %>%
+Reg3 <- read_csv(here("data/All.csv"))  %>%
   subset(select = c(1, 12:18))
+
+# Remove the ones with desired types
+Properties <- read_csv(here("data/Properties.csv"))
+
+Reg <- Reg3 %>%
+  left_join(Properties) %>%
+  filter(!((isREIT == TRUE) & is.na(PropertyType)))
 ```
 
 # Beta Calculations with at least 3 years data
@@ -69,7 +76,7 @@ Simple_Beta1 <- function(Returns, Reg, k) {
 }
 
 # Apply the function to extract data
-Reg2 <- Simple_Beta1(Returns, Reg, k)
+Reg2 <- Simple_Beta1(Returns, Reg %>% subset(select = -PropertyType), k)
 
 # summarize the data points
 Reg2 %>%
@@ -84,7 +91,7 @@ Reg2 %>%
   summarise(stocks = n())
 ```
 
-There are 1,496,878 usable non-REITs day&returns and 49,055 usable REITs day&returns. They are from 11,503 non-REITs stocks and 361 REITs stocks.
+There are 1,496,878 usable non-REITs day&returns and 29,022 usable REITs day&returns. They are from 11,503 non-REITs stocks and 208 REITs stocks.
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
@@ -216,7 +223,7 @@ Second, I would only choose the ones with more than 4 years worth of data (at le
 k = 48
 
 # Apply the function to extract data
-Reg2 <- Simple_Beta1(Returns, Reg, k)
+Reg2 <- Simple_Beta1(Returns, Reg %>% subset(select = -PropertyType), k)
 
 # summarize the data points
 Reg2 %>%
@@ -231,7 +238,7 @@ Reg2 %>%
   summarise(stocks = n())
 ```
 
-There are 1,438,238 usable non-REITs day&returns and 47,098 usable REITs day&returns. They are from 10,085 non-REITs stocks and 314 REITs stocks.
+There are 1,438,238 usable non-REITs day&returns and 28,000 usable REITs day&returns. They are from 10,085 non-REITs stocks and 183 REITs stocks.
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
@@ -308,7 +315,7 @@ Second, I would only choose the ones with more than 5 years worth of data (at le
 k = 60
 
 # Apply the function to extract data
-Reg2 <- Simple_Beta1(Returns, Reg, k)
+Reg2 <- Simple_Beta1(Returns, Reg %>% subset(select = -PropertyType), k)
 
 # summarize the data points
 Reg2 %>%
@@ -323,7 +330,7 @@ Reg2 %>%
   summarise(stocks = n())
 ```
 
-There are 1,364,749 usable non-REITs day&returns and 44,560 usable REITs day&returns. They are from 8,714 non-REITs stocks and 266 REITs stocks.
+There are 1,364,749 usable non-REITs day&returns and 26,423 usable REITs day&returns. They are from 8,714 non-REITs stocks and 153 REITs stocks.
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
@@ -398,7 +405,8 @@ All <- read_csv(here("data/All.csv"))
 
 All %>%
   subset(select = c(1, 2,18)) %>%
-  subset(isREIT == TRUE) %>%
+  filter(isREIT == TRUE,
+         PERMNO %in% Properties$PERMNO) %>%
   group_by(date) %>%
   summarise(n = n()) %>%
   ggplot(aes(date, n)) +
@@ -409,4 +417,4 @@ All %>%
   theme(plot.title = element_text(hjust=0.5))
 ```
 
-One way to tackle the unbalanced panel problem is to pick the stocks to form a balanced panel. However, this would result in a survivorship bias. I will check the IV-GMM method for alternative solution. 
+It seems that there are 70 REITs. At most, there are 120 REITs.

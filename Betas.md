@@ -16,15 +16,15 @@ First, I would only choose the ones with more than 3 years worth of data (at lea
     ##   isREIT    days_stocks
     ##   <fct>           <int>
     ## 1 non-REITs     1496878
-    ## 2 REITs           49055
+    ## 2 REITs           29022
 
     ## # A tibble: 2 x 2
     ##   isREIT    stocks
     ##   <fct>      <int>
     ## 1 non-REITs  11503
-    ## 2 REITs        361
+    ## 2 REITs        208
 
-There are 1,496,878 usable non-REITs day&returns and 49,055 usable REITs day&returns. They are from 11,503 non-REITs stocks and 361 REITs stocks.
+There are 1,496,878 usable non-REITs day&returns and 29,022 usable REITs day&returns. They are from 11,503 non-REITs stocks and 208 REITs stocks.
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
@@ -446,15 +446,15 @@ Second, I would only choose the ones with more than 4 years worth of data (at le
     ##   isREIT    days_stocks
     ##   <fct>           <int>
     ## 1 non-REITs     1438238
-    ## 2 REITs           47098
+    ## 2 REITs           28000
 
     ## # A tibble: 2 x 2
     ##   isREIT    stocks
     ##   <fct>      <int>
     ## 1 non-REITs  10085
-    ## 2 REITs        314
+    ## 2 REITs        183
 
-There are 1,438,238 usable non-REITs day&returns and 47,098 usable REITs day&returns. They are from 10,085 non-REITs stocks and 314 REITs stocks.
+There are 1,438,238 usable non-REITs day&returns and 28,000 usable REITs day&returns. They are from 10,085 non-REITs stocks and 183 REITs stocks.
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
@@ -874,15 +874,15 @@ Second, I would only choose the ones with more than 5 years worth of data (at le
     ##   isREIT    days_stocks
     ##   <fct>           <int>
     ## 1 non-REITs     1364749
-    ## 2 REITs           44560
+    ## 2 REITs           26423
 
     ## # A tibble: 2 x 2
     ##   isREIT    stocks
     ##   <fct>      <int>
     ## 1 non-REITs   8714
-    ## 2 REITs        266
+    ## 2 REITs        153
 
-There are 1,364,749 usable non-REITs day&returns and 44,560 usable REITs day&returns. They are from 8,714 non-REITs stocks and 266 REITs stocks.
+There are 1,364,749 usable non-REITs day&returns and 26,423 usable REITs day&returns. They are from 8,714 non-REITs stocks and 153 REITs stocks.
 
 I will apply all the available data for each asset to calculate the asset beta here. The model used is Fama French 5 Factor model.
 
@@ -1298,4 +1298,4 @@ Number of REITs at each month
 
 ![](Betas_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
-One way to tackle the unbalanced panel problem is to pick the stocks to form a balanced panel. However, this would result in a survivorship bias. I will check the IV-GMM method for alternative solution.
+It seems that there are 70 REITs. At most, there are 120 REITs.
