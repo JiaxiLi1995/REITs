@@ -31,7 +31,9 @@ REIT <- readxl::read_xlsx(here("data/REIT.xlsx")) %>%
          SHRCD = "Share Code",
          EXCHCD = "Exchange Code",
          RET = "Used Price Total Return...27",
-         cap = "Market Capitalization") %>%
+         cap = "Market Capitalization",
+         REITType = "REIT Type",
+         PropertyType = "Property Type") %>%
   # keep share code = 18 and exchange code > 0
   filter(SHRCD == 18,
          EXCHCD > 0)
@@ -137,8 +139,8 @@ Day_problem <- All %>%
   inner_join(All)
 
 # Remove the repeating ones that are inaccurate (even ones in Day_problem)
-Day_problem1 <- Day_problem1 <- Day_problem %>%
-  subset(seq(2,nrow(Day_problem), by = 2))
+Day_problem1 <- Day_problem %>%
+  subset(1:nrow(Day_problem) %in% seq(2,nrow(Day_problem), by = 2))
 
 All_3 <- Day_problem1 %>%
   full_join(All)
@@ -151,6 +153,29 @@ All_3 %>%
   summarise(n = n())
 ```
 
+Then, I will extract a table with desired REITs Property types vs. PERMNO. We would want only equity REITs (REIT TYPE == 2) and leave out anything with a property type = 0, 1, 6, 7, or 8.  That gets us away from REITs where we don’t know what they are actually doing (0 or 1), are mortgage REITs (6 or 7), or in residential (8) which is brand new or incredibly unusual.
+
+```{r}
+# Select Equity REIT and PropertyType 
+Properties <- REIT %>%
+  filter(REITType == 2,
+         PropertyType %in% c(2:5,9,10)) %>%
+  group_by(PERMNO, PropertyType) %>%
+  summarise(n = n())
+
+Prop <- Properties %>%
+  subset(select = - n) %>%
+  ungroup() %>%
+  group_by(PERMNO) %>%
+  summarise(n = n()) %>%
+  filter(n > 1)
+
+# Remove the ones only appears once
+Properties <- Properties %>%
+  filter(!((n == 1) & (PERMNO %in% Prop$PERMNO))) %>%
+  subset(select = - n)
+```
+
 Finally, we have matched 1,625,850 day&returns. There are 50,885 day&returns for REITs and 1,574,965 day&returns for non-REITs.
 
 # Save all the data
@@ -159,5 +184,6 @@ Finally, we have matched 1,625,850 day&returns. There are 50,885 day&returns for
  write_csv(All_3, here("data","All.csv"))
  write_csv(Problems, here("data","Problems.csv"))
  write_csv(Day_problem, here("data","Day_problem.csv"))
+ write_csv(Properties, here("data","Properties.csv"))
 ```
 
