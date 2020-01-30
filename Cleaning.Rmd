@@ -33,7 +33,8 @@ REIT <- readxl::read_xlsx(here("data/REIT.xlsx")) %>%
          RET = "Used Price Total Return...27",
          cap = "Market Capitalization",
          REITType = "REIT Type",
-         PropertyType = "Property Type") %>%
+         PropertyType = "Property Type",
+         PropertySubtype = "Property Subtype") %>%
   # keep share code = 18 and exchange code > 0
   filter(SHRCD == 18,
          EXCHCD > 0)
@@ -153,14 +154,17 @@ All_3 %>%
   summarise(n = n())
 ```
 
-Then, I will extract a table with desired REITs Property types vs. PERMNO. We would want only equity REITs (REIT TYPE == 2) and leave out anything with a property type = 0, 1, 6, 7, or 8.  That gets us away from REITs where we don’t know what they are actually doing (0 or 1), are mortgage REITs (6 or 7), or in residential (8) which is brand new or incredibly unusual.
+Finally, we have matched 1,625,850 day&returns. There are 50,885 day&returns for REITs and 1,574,965 day&returns for non-REITs.
+
+Then, I will extract a table with desired REITs Property types vs. PERMNO. We would want only equity REITs (REIT TYPE == 2) and leave out anything with a property type = 0, 1, 6, 7, or 8.  That gets us away from REITs where we don’t know what they are actually doing (0 or 1), are mortgage REITs (6 or 7), or in residential (8) which is brand new or incredibly unusual. We also need to filter out the subproperty types = 0,1,or 12, which are unknown, unclassified, or Mortgage Backed Security (MBS).
 
 ```{r}
 # Select Equity REIT and PropertyType 
 Properties <- REIT %>%
   filter(REITType == 2,
-         PropertyType %in% c(2:5,9,10)) %>%
-  group_by(PERMNO, PropertyType) %>%
+         PropertyType %in% c(2:5,9,10),
+         PropertySubtype %in% c(2:11,13:18)) %>%
+  group_by(PERMNO, PropertyType, PropertySubtype) %>%
   summarise(n = n())
 
 Prop <- Properties %>%
@@ -175,8 +179,6 @@ Properties <- Properties %>%
   filter(!((n == 1) & (PERMNO %in% Prop$PERMNO))) %>%
   subset(select = - n)
 ```
-
-Finally, we have matched 1,625,850 day&returns. There are 50,885 day&returns for REITs and 1,574,965 day&returns for non-REITs.
 
 # Save all the data
 ```{r, eval = FALSE}
