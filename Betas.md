@@ -1291,7 +1291,7 @@ max
 </tr>
 </tbody>
 </table>
-It seems that the distribution for REITs betas and non-REITs betas are similar.
+It seems that the distribution for REITs betas and non-REITs betas are similar. With the Kurtosis estimation, it seems that the 5 year window REITs would have a more similar distribution as the non-REITs.
 
 Number of REITs at each month
 -----------------------------
