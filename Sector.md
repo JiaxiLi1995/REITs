@@ -38,3 +38,6 @@ Here, I would apply the 5-year rolling window to estimate the betas and use them
 ![](Sector_files/figure-markdown_github/unnamed-chunk-8-1.png)![](Sector_files/figure-markdown_github/unnamed-chunk-8-2.png)
 
 Even with Rolling Windows, the Cook's Distance estimation shows that REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.
+
+Save the rolling-window lambda estimations
+==========================================

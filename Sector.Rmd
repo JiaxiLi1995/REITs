@@ -228,10 +228,7 @@ Rolling_Betas <- Rolling_beta %>%
               X1-100*floor(X1/100))),
     "-01",
     sep ="")) %>%
-  mutate(X1 = lead(X1),
-         X1 = ifelse(is.na(X1),
-                     "2019-11-01", X1),
-         X1 = as.Date(X1))
+  mutate(X1 = as.Date(X1))
   
 # fix the order of factors
 Rolling_Betas$types <- factor(Rolling_Betas$types, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
@@ -383,10 +380,7 @@ Rolling_beta1 <- All2 %>%
   filter(X1 > 199711) %>%
   rename(Intercept = RP) %>%
   subset(select = c(1,2,8,3:7)) %>%
-  group_by(Industry) %>%
-  mutate(X1 = lead(X1),
-         X1 = ifelse(is.na(X1),
-                     201911, X1))
+  group_by(Industry)
 
 # calculate the betas using a for loop, I will use the "Sectors" for Industry names
 for (j in 1:49) {
@@ -513,3 +507,10 @@ Rolling_Lambdas_cook1 %>%
 ```
 
 Even with Rolling Windows, the Cook's Distance estimation shows that REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.
+
+# Save the rolling-window lambda estimations
+```{r}
+Rolling_Lambdas %>%
+  write_csv(here("data","Rolling_Lambdas.csv"))
+```
+
