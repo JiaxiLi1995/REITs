@@ -125,7 +125,8 @@ CurYrLam <- CurMoLam %>%
 
 # Make the historical average lambda
 HistAvgLam <- CurMoLam %>%
-  mutate_all(cummean)
+  mutate_all(cummean) %>%
+  mutate(date = CurMoLam$date)
 ```
 
 
@@ -253,3 +254,149 @@ Here is the Risk Premiums for desired REITs with different Property Types:
 Here is the Risk Premiums for desired REITs with different Property Subtypes:
 
 ![Here is the Risk Premiums for desired REITs with different Property Subtypes:](CurMoSubproperty.png)
+
+# Use the Current Year Lambda for Equity Cost of Capita
+
+The first way is just use the current year estimated lambda for ECC estimation.
+
+```{r, cache = TRUE}
+# Calculate the Equity Cost of Capital using current year lambda
+CurYrECC <- CurYrLam %>%
+  inner_join(Betas) %>%
+  subset(!(year == 1997)) %>%
+  mutate(RiskPremium = MKt_RF*mkt_rf + SMB*smb + HML*hml + RMW*rmw + CMA*cma)
+
+# Plot the estimated log risk premium distributions for each year
+CurYrECC %>%
+  group_by(year) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Current Year Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+```
+
+Based on the graph, it seems that the the spread of Risk Premiums (Almost Equity Cost of Capital) are quite similar across the years. (A former test will be conducted later.) In 2008, however, the spread becomes really large suddenly.
+
+```{r, eval = FALSE}
+# Plot the estimated log risk premium distributions for each year while sperating property types
+CurYrECC %>%
+  group_by(year,PropertyType) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Current Year Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  facet_wrap(~ PropertyType,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("CurYrProperty.png", width = 3*2.5, height = 3*6, limitsize = FALSE)
+```
+
+```{r, eval = FALSE}
+# Plot the estimated log risk premium distributions for each year while sperating property types
+CurYrECC %>%
+  group_by(year,PropertySubtype) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Current Year Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  facet_wrap(~ PropertySubtype,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("CurYrSubproperty.png", width = 3*2.5, height = 3*12, limitsize = FALSE)
+```
+
+Here is the Risk Premiums for desired REITs with different Property Types:
+
+![Here is the Risk Premiums for desired REITs with different Property Types:](CurYrProperty.png)
+
+
+Here is the Risk Premiums for desired REITs with different Property Subtypes:
+
+![Here is the Risk Premiums for desired REITs with different Property Subtypes:](CurYrSubproperty.png)
+
+# Use the Historical Average Lambda for Equity Cost of Capita
+
+The first way is just use the historical average lambda for ECC estimation.
+
+```{r, cache = TRUE}
+# Calculate the Equity Cost of Capital using current year lambda
+HistAvgECC <- HistAvgLam %>%
+  inner_join(Betas) %>%
+  subset(!(year == 1997)) %>%
+  mutate(RiskPremium = MKt_RF*mkt_rf + SMB*smb + HML*hml + RMW*rmw + CMA*cma)
+
+# Plot the estimated log risk premium distributions for each year
+HistAvgECC %>%
+  group_by(year) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Historical Average Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+```
+
+Based on the graph, it seems that the the spread of Risk Premiums (Almost Equity Cost of Capital) are quite similar across the years. (A former test will be conducted later.) In 2008, however, the spread becomes really large suddenly.
+
+```{r, eval = FALSE}
+# Plot the estimated log risk premium distributions for each year while sperating property types
+HistAvgECC %>%
+  group_by(year,PropertyType) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Historical Average Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  facet_wrap(~ PropertyType,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("HistAvgProperty.png", width = 3*2.5, height = 3*6, limitsize = FALSE)
+```
+
+```{r, eval = FALSE}
+# Plot the estimated log risk premium distributions for each year while sperating property types
+HistAvgECC %>%
+  group_by(year,PropertySubtype) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Historical Average Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  facet_wrap(~ PropertySubtype,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("HistAvgSubproperty.png", width = 3*2.5, height = 3*12, limitsize = FALSE)
+```
+
+Here is the Risk Premiums for desired REITs with different Property Types:
+
+![Here is the Risk Premiums for desired REITs with different Property Types:](HistAvgProperty.png)
+
+
+Here is the Risk Premiums for desired REITs with different Property Subtypes:
+
+![Here is the Risk Premiums for desired REITs with different Property Subtypes:](HistAvgSubproperty.png)

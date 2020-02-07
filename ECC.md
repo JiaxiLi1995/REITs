@@ -45,3 +45,37 @@ Here is the Risk Premiums for desired REITs with different Property Types:
 Here is the Risk Premiums for desired REITs with different Property Subtypes:
 
 ![Here is the Risk Premiums for desired REITs with different Property Subtypes:](CurMoSubproperty.png)
+
+Use the Current Year Lambda for Equity Cost of Capita
+=====================================================
+
+The first way is just use the current year estimated lambda for ECC estimation.
+
+![](ECC_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
+Based on the graph, it seems that the the spread of Risk Premiums (Almost Equity Cost of Capital) are quite similar across the years. (A former test will be conducted later.) In 2008, however, the spread becomes really large suddenly.
+
+Here is the Risk Premiums for desired REITs with different Property Types:
+
+![Here is the Risk Premiums for desired REITs with different Property Types:](CurYrProperty.png)
+
+Here is the Risk Premiums for desired REITs with different Property Subtypes:
+
+![Here is the Risk Premiums for desired REITs with different Property Subtypes:](CurYrSubproperty.png)
+
+Use the Historical Average Lambda for Equity Cost of Capita
+===========================================================
+
+The first way is just use the historical average lambda for ECC estimation.
+
+![](ECC_files/figure-markdown_github/unnamed-chunk-13-1.png)
+
+Based on the graph, it seems that the the spread of Risk Premiums (Almost Equity Cost of Capital) are quite similar across the years. (A former test will be conducted later.) In 2008, however, the spread becomes really large suddenly.
+
+Here is the Risk Premiums for desired REITs with different Property Types:
+
+![Here is the Risk Premiums for desired REITs with different Property Types:](HistAvgProperty.png)
+
+Here is the Risk Premiums for desired REITs with different Property Subtypes:
+
+![Here is the Risk Premiums for desired REITs with different Property Subtypes:](HistAvgSubproperty.png)
