@@ -199,6 +199,7 @@ CurMoECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.3,0.3) +
   labs(title= "Estimated Risk Premium Using Current Month Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -215,6 +216,7 @@ CurMoECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.3,0.3) +
   labs(title= "Estimated Risk Premium Using Current Month Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -234,6 +236,7 @@ CurMoECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.3,0.3) +
   labs(title= "Estimated Risk Premium Using Current Month Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -272,6 +275,7 @@ CurYrECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.06,0.06) +
   labs(title= "Estimated Risk Premium Using Current Year Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -288,6 +292,7 @@ CurYrECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.06,0.06) +
   labs(title= "Estimated Risk Premium Using Current Year Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -307,6 +312,7 @@ CurYrECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.06,0.06) +
   labs(title= "Estimated Risk Premium Using Current Year Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -345,6 +351,7 @@ HistAvgECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.06,0.06) +
   labs(title= "Estimated Risk Premium Using Historical Average Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -361,6 +368,7 @@ HistAvgECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.06,0.06) +
   labs(title= "Estimated Risk Premium Using Historical Average Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
@@ -380,6 +388,7 @@ HistAvgECC %>%
   ggplot(aes(x = as.character(year),y = RiskPremium)) +
   geom_boxplot() +
   geom_violin(alpha = 0.6) +
+  ylim(-0.06,0.06) +
   labs(title= "Estimated Risk Premium Using Historical Average Lambda",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Risk Premium") + 
