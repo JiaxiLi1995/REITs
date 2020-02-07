@@ -1,0 +1,255 @@
+---
+title: "ECC"
+author: "Jiaxi Li"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+In this file, I will calculate the equity cost of capital. For each 5-year window, I would use the 49 industry portfolios to calculate the risk premiums (from Sector.Rmd), and use asset level data to calculate the individual betas. Then use their product as the equity cost of capital.
+
+# Load Data
+
+Load FF5.csv and 49_Industry_Portfolios.csv
+
+```{r}
+# load useful packages
+library(tidyverse)
+library(here)
+library(dplyr)
+```
+
+```{r, cache = TRUE}
+# load data
+All <- read_csv(here("data/All.csv"))
+Types <- read_csv(here("data/Properties.csv"))
+Lambdas <- read_csv(here("data/Rolling_Lambdas.csv"))
+```
+
+# Examine whether lambda is stationary using time-series plot
+```{r, cache = TRUE}
+# plot the time-series betas
+Lambdas %>%
+  mutate(date= paste(as.character(
+    floor(date/100)),
+    "-",
+    as.character(
+      sprintf("%02d",
+              round(date)-100*floor(date/100))),
+    "-01",
+    sep ="")) %>%
+  mutate(date = as.Date(date)) %>%
+  ggplot() +
+  geom_line(aes(date,
+             RP)) +
+  scale_x_date() +
+  labs(title= "Estimated 5-year Lambdas for 49 Industry Portfolios",
+       caption = "Source: Ken French Data Library",
+       x = "date", y = "coefficients") +
+  facet_wrap(~ Factors,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+```
+It seems that the lambdas are really stationary. Therefore, I will use current lamdas, lambdas for the year, as well as historical average lambdas for equity cost of capital estimation.
+
+# 5-year Rolling Betas
+
+I will calculate the 5-year Rolling Betas for individual REIT.
+
+```{r, cache = TRUE}
+# Joining data for rolling beta estimation
+REITs <- All %>%
+  inner_join(Types) %>%
+  subset(select = -c(3:11,18))
+
+# Create year and month
+REITs <- REITs %>%
+  mutate(year = floor(date/100),
+         month = date - year*100)
+
+# Locate the time and asset when 5-year rolling beta is possible to estimate (59 entries before, the PERMNO is the same, the date is 4 year 11 month less)
+REITs <- REITs %>%
+  mutate(Select = (PERMNO == lag(PERMNO,59)) & ((date == (lag(date,59)+411))|(date == lag(date,59)+499)),
+         Select = replace_na(Select,FALSE))
+
+# Create the estimated betas matrix
+Betas <- REITs %>%
+  subset(Select) %>%
+  subset(select = -length(REITs)) %>%
+  rename(alpha = rp)
+  
+# Find the selected index
+Ind <- which(REITs$Select,arr.ind = TRUE)
+
+# apply the for loop to calculate the 5-year rolling beta (60 data points)
+for (i in 1:(length(Ind))) {
+  temp <- REITs %>%
+    subset(1:nrow(REITs) %in% (Ind[i]-59):Ind[i]) %>%
+    subset(select = 3:8) %>%
+    do(model = lm(rp ~ ., data = .) %>%
+       coefficients())
+  Betas[i,3:8] <- temp$model[[1]]
+}
+```
+
+# Different Lambdas
+
+The next step would be calculate the lambdas. I would have three type of lambdas, current month lambda as CurMoLam, current year lambda as CurYrLam, historical average lambda as HistAvgLam.
+
+```{r, cache = TRUE}
+# fix the order of factors
+Lambdas$Factors <- factor(Lambdas$Factors, levels = c("Intercept","Mkt-RF","SMB","HML","RMW","CMA"))
+
+# Set the Property Types and Property Subtypes
+Betas$PropertyType <- factor(Betas$PropertyType, labels = c("Diversified","Health Care","Industrial/Office","Lodging/Resort","Retail","Self Storage"))
+
+Betas$PropertySubtype <- factor(Betas$PropertySubtype, labels = c("Appartments","Diversified","Freestanding","Health Care","Industrial","Lodging/Resort","Mixed","Office","Reginal Malls","Self Storage","Shopping Centers","Strip Centers"))
+
+# Make the current month Lambda matrix
+CurMoLam <- Lambdas %>%
+  spread(key = Factors, value = RP) %>%
+  rename(MKt_RF = "Mkt-RF") %>%
+  mutate(date = round(date))
+
+# Make the current year Lambda matrix
+CurYrLam <- CurMoLam %>%
+  mutate(year = floor(date/100)) %>%
+  group_by(year) %>%
+  summarize_all(mean) %>%
+  subset(select = -date)
+
+# Make the historical average lambda
+HistAvgLam <- CurMoLam %>%
+  mutate_all(cummean)
+```
+
+
+# Check the number of assets in our sample each month and at the end of each year.
+
+```{r, cache = TRUE}
+Betas %>%
+  subset(select=1:2) %>%
+  group_by(date) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(date, n)) +
+  geom_line() +
+  labs(title= "Number of Asset Betas Each Month",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "date", y = "Number") + 
+  theme(plot.title = element_text(hjust=0.5))
+
+Betas %>%
+  subset(month==12) %>%
+  subset(select=9:12) %>%
+  group_by(year) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(year, n)) +
+  geom_line() +
+  labs(title= "Number of Asset Betas at the end of each year",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Number") + 
+  theme(plot.title = element_text(hjust=0.5))
+
+Betas %>%
+  subset(month==12) %>%
+  subset(select=9:12) %>%
+  group_by(year, PropertyType) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(year, n)) +
+  geom_line() +
+  labs(title= "Number of Asset Betas at the end of each year",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Number") + 
+  facet_wrap(~ PropertyType)
+  theme(plot.title = element_text(hjust=0.5))
+
+Betas %>%
+  subset(month==12) %>%
+  subset(select=9:12) %>%
+  group_by(year, PropertySubtype) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(year, n)) +
+  geom_line() +
+  labs(title= "Number of Asset Betas at the end of each year",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Number") + 
+  facet_wrap(~ PropertySubtype)
+  theme(plot.title = element_text(hjust=0.5))
+```
+
+# Use the Current Month Lambda for Equity Cost of Capita
+
+The first way is just use the current month estimated lambda for ECC estimation.
+
+```{r, cache = TRUE}
+# Calculate the Equity Cost of Capital using current month lambda
+CurMoECC <- CurMoLam %>%
+  inner_join(Betas) %>%
+  mutate(RiskPremium = MKt_RF*mkt_rf + SMB*smb + HML*hml + RMW*rmw + CMA*cma)
+
+# Plot the estimated log risk premium distributions for each year
+CurMoECC %>%
+  group_by(year) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Current Month Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+```
+
+Based on the graph, it seems that the the spread of Risk Premiums (Almost Equity Cost of Capital) are quite similar across the years. (A former test will be conducted later.) In 2008, however, the spread becomes really large suddenly.
+
+```{r, eval = FALSE}
+# Plot the estimated log risk premium distributions for each year while sperating property types
+CurMoECC %>%
+  group_by(year,PropertyType) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Current Month Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  facet_wrap(~ PropertyType,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("CurMoProperty.png", width = 3*2.5, height = 3*6, limitsize = FALSE)
+```
+
+```{r, eval = FALSE}
+# Plot the estimated log risk premium distributions for each year while sperating property types
+CurMoECC %>%
+  group_by(year,PropertySubtype) %>%
+  ggplot(aes(x = as.character(year),y = RiskPremium)) +
+  geom_boxplot() +
+  geom_violin(alpha = 0.6) +
+  labs(title= "Estimated Risk Premium Using Current Month Lambda",
+       caption = "Source: CRSP, Ken French Data Library, and Ziman",
+       x = "year", y = "Risk Premium") + 
+  facet_wrap(~ PropertySubtype,
+             ncol = 1,
+             scales = "free")+
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 75, hjust = 1))
+
+ggsave("CurMoSubproperty.png", width = 3*2.5, height = 3*12, limitsize = FALSE)
+```
+
+Here is the Risk Premiums for desired REITs with different Property Types:
+
+![Here is the Risk Premiums for desired REITs with different Property Types:](CurMoProperty.png)
+
+
+Here is the Risk Premiums for desired REITs with different Property Subtypes:
+
+![Here is the Risk Premiums for desired REITs with different Property Subtypes:](CurMoSubproperty.png)
