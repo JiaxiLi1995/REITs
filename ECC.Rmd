@@ -165,7 +165,7 @@ Betas %>%
   labs(title= "Number of Asset Betas at the end of each year",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Number") + 
-  facet_wrap(~ PropertyType)
+  facet_wrap(~ PropertyType) +
   theme(plot.title = element_text(hjust=0.5))
 
 Betas %>%
@@ -178,7 +178,7 @@ Betas %>%
   labs(title= "Number of Asset Betas at the end of each year",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Number") + 
-  facet_wrap(~ PropertySubtype)
+  facet_wrap(~ PropertySubtype) +
   theme(plot.title = element_text(hjust=0.5))
 ```
 

@@ -27,45 +27,7 @@ The next step would be calculate the lambdas. I would have three type of lambdas
 Check the number of assets in our sample each month and at the end of each year.
 ================================================================================
 
-![](ECC_files/figure-markdown_github/unnamed-chunk-6-1.png)![](ECC_files/figure-markdown_github/unnamed-chunk-6-2.png)![](ECC_files/figure-markdown_github/unnamed-chunk-6-3.png)
-
-    ## List of 1
-    ##  $ plot.title:List of 11
-    ##   ..$ family       : NULL
-    ##   ..$ face         : NULL
-    ##   ..$ colour       : NULL
-    ##   ..$ size         : NULL
-    ##   ..$ hjust        : num 0.5
-    ##   ..$ vjust        : NULL
-    ##   ..$ angle        : NULL
-    ##   ..$ lineheight   : NULL
-    ##   ..$ margin       : NULL
-    ##   ..$ debug        : NULL
-    ##   ..$ inherit.blank: logi FALSE
-    ##   ..- attr(*, "class")= chr [1:2] "element_text" "element"
-    ##  - attr(*, "class")= chr [1:2] "theme" "gg"
-    ##  - attr(*, "complete")= logi FALSE
-    ##  - attr(*, "validate")= logi TRUE
-
-![](ECC_files/figure-markdown_github/unnamed-chunk-6-4.png)
-
-    ## List of 1
-    ##  $ plot.title:List of 11
-    ##   ..$ family       : NULL
-    ##   ..$ face         : NULL
-    ##   ..$ colour       : NULL
-    ##   ..$ size         : NULL
-    ##   ..$ hjust        : num 0.5
-    ##   ..$ vjust        : NULL
-    ##   ..$ angle        : NULL
-    ##   ..$ lineheight   : NULL
-    ##   ..$ margin       : NULL
-    ##   ..$ debug        : NULL
-    ##   ..$ inherit.blank: logi FALSE
-    ##   ..- attr(*, "class")= chr [1:2] "element_text" "element"
-    ##  - attr(*, "class")= chr [1:2] "theme" "gg"
-    ##  - attr(*, "complete")= logi FALSE
-    ##  - attr(*, "validate")= logi TRUE
+![](ECC_files/figure-markdown_github/unnamed-chunk-6-1.png)![](ECC_files/figure-markdown_github/unnamed-chunk-6-2.png)![](ECC_files/figure-markdown_github/unnamed-chunk-6-3.png)![](ECC_files/figure-markdown_github/unnamed-chunk-6-4.png)
 
 Use the Current Month Lambda for Equity Cost of Capita
 ======================================================
