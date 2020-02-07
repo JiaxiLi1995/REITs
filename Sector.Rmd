@@ -509,7 +509,10 @@ Rolling_Lambdas_cook1 %>%
 Even with Rolling Windows, the Cook's Distance estimation shows that REITs does not seem to pull the factor premium estimation of the second pass Fama Macbeth.
 
 # Save the rolling-window lambda estimations
-```{r}
+```{r, eval=FALSE}
+Rolling_Lambdas %>%
+  mutate(date = round(date))
+
 Rolling_Lambdas %>%
   write_csv(here("data","Rolling_Lambdas.csv"))
 ```
