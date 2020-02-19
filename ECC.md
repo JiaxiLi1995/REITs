@@ -101,4 +101,4 @@ Finally, the historical average ECC are used for testing.
 
 ![Here is the p-value result of the CvM test:](HistAvgECCcompare.png)
 
-Again, it seems that with historical average lambda to estimate the ECC, the distributions of ECC are almost always changing.
+It seems that with historical average lambda estimated ECCs are more consistance, the distributions of ECCs are not always changing. The previous changes in ECC are partially due to the change in lambda.
