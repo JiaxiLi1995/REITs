@@ -79,3 +79,26 @@ Here is the Risk Premiums for desired REITs with different Property Types:
 Here is the Risk Premiums for desired REITs with different Property Subtypes:
 
 ![Here is the Risk Premiums for desired REITs with different Property Subtypes:](HistAvgSubproperty.png)
+
+Test of Distribution Consistency
+================================
+
+In this section, we will conduct the CvM test to see if the distributions of the ECCs' are changing each year, each 5 years and during great recession.
+
+First, the current month ECC are used for testing.
+
+![Here is the p-value result of the CvM test:](CurMoECCcompare.png)
+
+It seems that with current month lambda to estimate the ECC, the distributions of ECC are almost always changing.
+
+Then, the current year ECC are used for testing.
+
+![Here is the p-value result of the CvM test:](CurYrECCcompare.png)
+
+Again, it seems that with current year lambda to estimate the ECC, the distributions of ECC are almost always changing.
+
+Finally, the historical average ECC are used for testing.
+
+![Here is the p-value result of the CvM test:](HistAvgECCcompare.png)
+
+Again, it seems that with historical average lambda to estimate the ECC, the distributions of ECC are almost always changing.
