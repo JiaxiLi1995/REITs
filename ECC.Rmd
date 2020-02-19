@@ -432,7 +432,7 @@ CurMoP5 = cbind(1997:2013,1997:2013) %>%
   rename(year = V1,
          pvalue = V2) %>%
   group_by(year) %>%
-  mutate(compare = paste(year %>% toString(),"vs.", (year+1) %>% toString()),
+  mutate(compare = paste(year %>% toString(),"vs.", (year+5) %>% toString()),
          distance = "5 Years Comparison")
 
 CurMoPFin = cbind(1997,1997) %>%
@@ -505,7 +505,7 @@ CurYrP5 = cbind(1998:2013,1998:2013) %>%
   rename(year = V1,
          pvalue = V2) %>%
   group_by(year) %>%
-  mutate(compare = paste(year %>% toString(),"vs.", (year+1) %>% toString()),
+  mutate(compare = paste(year %>% toString(),"vs.", (year+5) %>% toString()),
          distance = "5 Years Comparison")
 
 CurYrPFin = cbind(1998,1998) %>%
