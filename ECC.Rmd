@@ -612,3 +612,230 @@ ggsave("HistAvgECCcompare.png", width = 3*2.5, height = 3*3, limitsize = FALSE)
 ![Here is the p-value result of the CvM test:](HistAvgECCcompare.png)
 
 It seems that with historical average lambda estimated ECCs are more consistance, the distributions of ECCs are not always changing. The previous changes in ECC are partially due to the change in lambda.
+
+
+# Test of Distribution Consistency for Property Types
+
+In this section, we will conduct the CvM test to see if the distributions of the ECCs' are changing each year, each 5 years and during great recession for different Property Types. It seems that Industrial/Office and Retail have a bit more data to yield more reliable results.
+
+First, the current month ECC are used for testing.
+
+```{r, eval = FALSE}
+# Current Month RiskPremium comparison P-Value
+# Reuse data frames to store the p values
+# CurMoP1
+# CurMoP5
+# CurMoPFin
+CurMoP1Retail <- CurMoP1 %>%
+  mutate(PropertyType = "Retail")
+CurMoP1IO <- CurMoP1 %>%
+  mutate(PropertyType = "Industrial/Office")
+CurMoP5Retail <- CurMoP5 %>%
+  mutate(PropertyType = "Retail")
+CurMoP5IO <- CurMoP5 %>%
+  mutate(PropertyType = "Industrial/Office")
+CurMoPFinRetail <- CurMoPFin %>%
+  mutate(PropertyType = "Retail")
+CurMoPFinIO <- CurMoPFin %>%
+  mutate(PropertyType = "Industrial/Office")
+
+# calculate the p value for CvM test 1 year apart
+for (i in 1997:2017) {
+  CurMoP1Retail[i-1996,2] = twosamples::cvm_test(CurMoECC %>% filter(year == i, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                                 CurMoECC %>% filter(year == i+1, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+  
+    CurMoP1IO[i-1996,2] = twosamples::cvm_test(CurMoECC %>% filter(year == i, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                               CurMoECC %>% filter(year == i+1, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+}
+
+# calculate the p value for CvM test 5 years apart
+for (i in 1997:2013) {
+  CurMoP5Retail[i-1996,2] = twosamples::cvm_test(CurMoECC %>% filter(year == i, month == 12, PropertyType == "Retail") %>%  subset(select = RiskPremium) %>% deframe(),
+                                                 CurMoECC %>% filter(year == i+5, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+  
+  CurMoP5IO[i-1996,2] = twosamples::cvm_test(CurMoECC %>% filter(year == i, month == 12, PropertyType == "Industrial/Office") %>%  subset(select = RiskPremium) %>% deframe(),
+                                                 CurMoECC %>% filter(year == i+5, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+}
+
+# calculate the p value for CvM test before and after Financial Crisis
+CurMoPFinRetail[2] = twosamples::cvm_test(CurMoECC %>% filter(year < 2008, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                    CurMoECC %>% filter(year > 2008, month == 12, PropertyType == "Retail") %>%  subset(select = RiskPremium) %>% deframe())[2]
+
+CurMoPFinIO[2] = twosamples::cvm_test(CurMoECC %>% filter(year < 2008, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                    CurMoECC %>% filter(year > 2008, month == 12, PropertyType == "Industrial/Office") %>%  subset(select = RiskPremium) %>% deframe())[2]
+
+# Combine different comparisons
+CurMoCompare <- rbind(CurMoP1Retail, CurMoP1IO, CurMoP5Retail, CurMoP5IO, CurMoPFinRetail, CurMoPFinIO)
+
+# Plot the p values from the CvM test
+CurMoCompare %>%
+  ggplot() +
+  geom_bar(aes(compare, pvalue, fill = PropertyType),
+           position=position_dodge(),
+           stat = "identity") +
+  geom_hline(yintercept = c(0.1,0.05,0.01),
+             linetype = "dashed",
+             color = "green") +
+  facet_wrap(~ distance,
+             ncol = 1,
+             scales = "free") +
+  labs(title= "P-value for CvM test of Distribution of Current Month Estimated Equity Cost of Capital",
+       caption = "Source: Ken French Data Library, and Ziman",
+       x = "years", y = "p value") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("CurMoECCTypecompare.png", width = 3*2.5, height = 3*3, limitsize = FALSE)
+```
+
+![Here is the p-value result of the CvM test:](CurMoECCTypecompare.png)
+
+It seems that with current month lambda to estimate the ECC, the distributions of ECC are almost always changing. The distributions before and after financial crisis are different.
+
+Then, the current year ECC are used for testing.
+
+```{r, eval = FALSE}
+# Current Year RiskPremium comparison P-Value
+# Reuse data frames to store the p values
+# CurYrP1
+# CurYrP5
+# CurYrPFin
+CurYrP1Retail <- CurYrP1 %>%
+  mutate(PropertyType = "Retail")
+CurYrP1IO <- CurYrP1 %>%
+  mutate(PropertyType = "Industrial/Office")
+CurYrP5Retail <- CurYrP5 %>%
+  mutate(PropertyType = "Retail")
+CurYrP5IO <- CurYrP5 %>%
+  mutate(PropertyType = "Industrial/Office")
+CurYrPFinRetail <- CurYrPFin %>%
+  mutate(PropertyType = "Retail")
+CurYrPFinIO <- CurYrPFin %>%
+  mutate(PropertyType = "Industrial/Office")
+
+# calculate the p value for CvM test 1 year apart
+for (i in 1998:2017) {
+  CurYrP1Retail[i-1997,2] = twosamples::cvm_test(CurYrECC %>% filter(year == i, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                                 CurYrECC %>% filter(year == i+1, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+  
+  CurYrP1IO[i-1997,2] = twosamples::cvm_test(CurYrECC %>% filter(year == i, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                             CurYrECC %>% filter(year == i+1, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+}
+
+# calculate the p value for CvM test 5 years apart
+for (i in 1998:2013) {
+  CurYrP5Retail[i-1997,2] = twosamples::cvm_test(CurYrECC %>% filter(year == i, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                                 CurYrECC %>% filter(year == i+5, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+  
+  CurYrP5IO[i-1997,2] = twosamples::cvm_test(CurYrECC %>% filter(year == i, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                             CurYrECC %>% filter(year == i+5, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+}
+
+# calculate the p value for CvM test before and after Financial Crisis
+CurYrPFinRetail[2] = twosamples::cvm_test(CurYrECC %>% filter(year < 2008, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                          CurYrECC %>% filter(year > 2008, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+
+CurYrPFinIO[2] = twosamples::cvm_test(CurYrECC %>% filter(year < 2008, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                      CurYrECC %>% filter(year > 2008, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+
+# Combine different comparisons
+CurYrCompare <- rbind(CurYrP1Retail, CurYrP1IO, CurYrP5Retail, CurYrP5IO, CurYrPFinRetail, CurYrPFinIO)
+
+# Plot the p values from the CvM test
+CurYrCompare %>%
+  ggplot() +
+  geom_bar(aes(compare, pvalue, fill = PropertyType),
+           position=position_dodge(),
+           stat = "identity") +
+  geom_hline(yintercept = c(0.1,0.05,0.01),
+             linetype = "dashed",
+             color = "green") +
+  facet_wrap(~ distance,
+             ncol = 1,
+             scales = "free") +
+  labs(title= "P-value for CvM test of Distribution of Current Year Estimated Equity Cost of Capital",
+       caption = "Source: Ken French Data Library, and Ziman",
+       x = "years", y = "p value") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("CurYrECCTypecompare.png", width = 3*2.5, height = 3*3, limitsize = FALSE)
+```
+
+![Here is the p-value result of the CvM test:](CurYrECCTypecompare.png)
+
+It seems that with current year lambda to estimate the ECC, the distributions of ECC are almost always changing year-to-year except the years around financial crisis. However, when comparing 5 years before and after. It seems that change happened mostly around the financial crisis. The distributions before and after financial crisis are still different.
+
+Finally, the historical average ECC are used for testing.
+
+```{r, eval = FALSE}
+# historical average RiskPremium comparison P-Value
+# Reuse data frames to store the p values
+# HistAvgP1
+# HistAvgP5
+# HistAvgPFin
+HistAvgP1Retail <- HistAvgP1 %>%
+  mutate(PropertyType = "Retail")
+HistAvgP1IO <- HistAvgP1 %>%
+  mutate(PropertyType = "Industrial/Office")
+HistAvgP5Retail <- HistAvgP5 %>%
+  mutate(PropertyType = "Retail")
+HistAvgP5IO <- HistAvgP5 %>%
+  mutate(PropertyType = "Industrial/Office")
+HistAvgPFinRetail <- HistAvgPFin %>%
+  mutate(PropertyType = "Retail")
+HistAvgPFinIO <- HistAvgPFin %>%
+  mutate(PropertyType = "Industrial/Office")
+
+# calculate the p value for CvM test 1 year apart
+for (i in 1998:2017) {
+  HistAvgP1Retail[i-1997,2] = twosamples::cvm_test(HistAvgECC %>% filter(year == i, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                                   HistAvgECC %>% filter(year == i+1, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+  
+  HistAvgP1IO[i-1997,2] = twosamples::cvm_test(HistAvgECC %>% filter(year == i, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                                   HistAvgECC %>% filter(year == i+1, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+}
+
+# calculate the p value for CvM test 5 years apart
+for (i in 1998:2013) {
+  HistAvgP5Retail[i-1997,2] = twosamples::cvm_test(HistAvgECC %>% filter(year == i, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                                   HistAvgECC %>% filter(year == i+5, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+  
+  HistAvgP5IO[i-1997,2] = twosamples::cvm_test(HistAvgECC %>% filter(year == i, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                               HistAvgECC %>% filter(year == i+5, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+}
+
+# calculate the p value for CvM test before and after Financial Crisis
+HistAvgPFinRetail[2] = twosamples::cvm_test(HistAvgECC %>% filter(year < 2008, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe(),
+                                            HistAvgECC %>% filter(year > 2008, month == 12, PropertyType == "Retail") %>% subset(select = RiskPremium) %>% deframe())[2]
+
+HistAvgPFinIO[2] = twosamples::cvm_test(HistAvgECC %>% filter(year < 2008, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe(),
+                                        HistAvgECC %>% filter(year > 2008, month == 12, PropertyType == "Industrial/Office") %>% subset(select = RiskPremium) %>% deframe())[2]
+
+# Combine different comparisons
+HistAvgCompare <- rbind(HistAvgP1Retail, HistAvgP1IO, HistAvgP5Retail, HistAvgP5IO, HistAvgPFinRetail, HistAvgPFinIO)
+
+# Plot the p values from the CvM test
+HistAvgCompare %>%
+  ggplot() +
+  geom_bar(aes(compare, pvalue, fill = PropertyType),
+           position=position_dodge(),
+           stat = "identity") +
+  geom_hline(yintercept = c(0.1,0.05,0.01),
+             linetype = "dashed",
+             color = "green") +
+  facet_wrap(~ distance,
+             ncol = 1,
+             scales = "free") +
+  labs(title= "P-value for CvM test of Distribution of Historical Average Estimated Equity Cost of Capital",
+       caption = "Source: Ken French Data Library, and Ziman",
+       x = "years", y = "p value") +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("HistAvgECCTypecompare.png", width = 3*2.5, height = 3*3, limitsize = FALSE)
+```
+
+![Here is the p-value result of the CvM test:](HistAvgECCTypecompare.png)
+
+It seems that with historical average lambda estimated ECCs are more consistance, the distributions of ECCs are not always changing. The previous changes in ECC are partially due to the volatility in lambda.

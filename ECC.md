@@ -102,3 +102,26 @@ Finally, the historical average ECC are used for testing.
 ![Here is the p-value result of the CvM test:](HistAvgECCcompare.png)
 
 It seems that with historical average lambda estimated ECCs are more consistance, the distributions of ECCs are not always changing. The previous changes in ECC are partially due to the change in lambda.
+
+Test of Distribution Consistency for Property Types
+===================================================
+
+In this section, we will conduct the CvM test to see if the distributions of the ECCs' are changing each year, each 5 years and during great recession for different Property Types. It seems that Industrial/Office and Retail have a bit more data to yield more reliable results.
+
+First, the current month ECC are used for testing.
+
+![Here is the p-value result of the CvM test:](CurMoECCTypecompare.png)
+
+It seems that with current month lambda to estimate the ECC, the distributions of ECC are almost always changing. The distributions before and after financial crisis are different.
+
+Then, the current year ECC are used for testing.
+
+![Here is the p-value result of the CvM test:](CurYrECCTypecompare.png)
+
+It seems that with current year lambda to estimate the ECC, the distributions of ECC are almost always changing year-to-year except the years around financial crisis. However, when comparing 5 years before and after. It seems that change happened mostly around the financial crisis. The distributions before and after financial crisis are still different.
+
+Finally, the historical average ECC are used for testing.
+
+![Here is the p-value result of the CvM test:](HistAvgECCTypecompare.png)
+
+It seems that with historical average lambda estimated ECCs are more consistance, the distributions of ECCs are not always changing. The previous changes in ECC are partially due to the volatility in lambda.
