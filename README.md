@@ -15,3 +15,7 @@ We try to price the equity REITS using existing factors. The REIT, stock and Fac
 * The third file here is called Sector.Rmd, in which I calculate the sector betas. [***Here***](https://github.com/JiaxiLi1995/REITs/blob/master/Sector.md) is the result of Sector Beta Analysis.
 
 * The fourth file here is called ECC.Rmd, in which I calculate and compare the distribution of Equity Cost of Capital. [***Here***](https://github.com/JiaxiLi1995/REITs/blob/master/ECC.md) is the result of Equity Cost of Capital Analysis.
+
+
+## Notes:
+Based on the Plot of Observation Numbers, it seems that 1998 has insufficient number of observations. We will remove the year 1998. As Professor Aguilar suggested, we can do a left tail comparison to see the evolution of value at risk of the ECC.
