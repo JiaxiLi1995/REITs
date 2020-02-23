@@ -135,10 +135,20 @@ HistAvgLam <- CurMoLam %>%
 ```{r, cache = TRUE}
 Betas %>%
   subset(select=1:2) %>%
+  mutate(date= paste(as.character(
+    floor(date/100)),
+    "-",
+    as.character(
+      sprintf("%02d",
+              round(date)-100*floor(date/100))),
+    "-01",
+    sep ="")) %>%
+  mutate(date = as.Date(date)) %>%
   group_by(date) %>%
   summarise(n = n()) %>%
   ggplot(aes(date, n)) +
   geom_line() +
+  scale_x_date(minor_breaks = "1 year") +
   labs(title= "Number of Asset Betas Each Month",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "date", y = "Number") + 
@@ -151,6 +161,7 @@ Betas %>%
   summarise(n = n()) %>%
   ggplot(aes(year, n)) +
   geom_line() +
+  scale_x_continuous(minor_breaks = seq(from = 1997, to = 2018, by = 1)) +
   labs(title= "Number of Asset Betas at the end of each year",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Number") + 
@@ -163,6 +174,7 @@ Betas %>%
   summarise(n = n()) %>%
   ggplot(aes(year, n)) +
   geom_line() +
+  scale_x_continuous(minor_breaks = seq(from = 1997, to = 2018, by = 1)) +
   labs(title= "Number of Asset Betas at the end of each year",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Number") + 
@@ -176,6 +188,7 @@ Betas %>%
   summarise(n = n()) %>%
   ggplot(aes(year, n)) +
   geom_line() +
+  scale_x_continuous(minor_breaks = seq(from = 1997, to = 2018, by = 1)) +
   labs(title= "Number of Asset Betas at the end of each year",
        caption = "Source: CRSP, Ken French Data Library, and Ziman",
        x = "year", y = "Number") + 
